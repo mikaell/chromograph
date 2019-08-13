@@ -86,5 +86,5 @@ ROH wig files are supported on format:
 ## Installation
 ```
 pip install numpy; pip install matplotlib; pip install pandas
-python setup.py install
+pip install -e .
 ```
