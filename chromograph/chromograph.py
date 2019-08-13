@@ -160,7 +160,7 @@ def test():
     print("autoload NO WAY?")
 
 
-    
+
 def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     """
     Print all chromosomes in a single PNG picture.
@@ -389,23 +389,21 @@ def main():
     parser.add_argument("-r", "--roh", dest="rohfile",
                         help="input ROH (fixed step wig-file)",
                         metavar="FILE")
-    parser.add_argument("--step", dest="step",
-                        help="fixed step size (default 5000)",
-                        action='store_true')
+    parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
     parser.add_argument("-c", "--combine",
                         help="plot all graphs in one file, default one graph per file",
                         action='store_true')
     args = parser.parse_args()
 
+    print(args.step)
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine)
     if args.updfile:
         plot_upd(args.updfile, args.combine)
     if args.rohfile:
-        plot_roh(args.rohfile, args.combine, args.step)
+        plot_roh(args.rohfile, args.combine, step=args.step)
 
 
 
 if __name__ == "__main__":
     main()
-
