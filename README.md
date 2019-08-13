@@ -3,8 +3,16 @@
 ## What is Chromograph?
 Chromograph is a python package to create PNG images from genetics data
 such as BED and WIG files. It is primarily build to integrate with
-software form (Clinical Genomics)[https://github.com/Clinical-Genomics] and
-(UPD Tool)[https://github.com/bjhall/upd] but is stand-alone.
+software form [Clinical Genomics](https://github.com/Clinical-Genomics) and
+[UPD Tool](https://github.com/bjhall/upd) but is stand-alone.
+
+Integrated with [Scout] (https://github.com/Clinical-Genomics/scout):
+
+
+![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
+
+
+
 
 ## Usage, command line
 ```
@@ -43,20 +51,20 @@ chr.plot_ideogram("~/Work/files_test/cytoband.bed", 'combine', outd="/Users/Mika
 
 
 
-### Data Formats
-## UPD BED
+## Data Formats
+### UPD BED
 UPD bed files are supported on format:
 ```
 'chrom', 'start', 'end', 'updType'
 ```
 
-## Ideogram BED
+### Ideogram BED
 Ideogram bed files are supported on format:
 ```
 IDEOGRAM_FORMAT = ['chrom', 'start', 'end', 'name', 'gStain']
 ```
 
-## ROH Coverage WIG
+### ROH Coverage WIG
 ROH wig files are supported on format:
 ['chrom', 'coverage', 'pos']
 
