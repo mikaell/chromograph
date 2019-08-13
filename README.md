@@ -6,7 +6,9 @@ such as BED and WIG files. It is primarily build to integrate with
 software form [Clinical Genomics](https://github.com/Clinical-Genomics) and
 [UPD Tool](https://github.com/bjhall/upd) but is stand-alone.
 
-Integrated with [Scout] (https://github.com/Clinical-Genomics/scout):
+Integrated with [Scout](https://github.com/Clinical-Genomics/scout) Chromograph can be used to visualise chromosomes:
+
+
 
 
 ![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
