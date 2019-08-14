@@ -7,5 +7,5 @@ setup(
    author='mikaell',
    author_email='mikael.laaksonen@scilifelab.se',
    packages=['chromograph'],  #same as name
-   install_requires=['pandas', 'matplotlib', 'numpy'],
+   install_requires=['pandas', 'matplotlib', 'numpy', 'pyaml'],
 )
