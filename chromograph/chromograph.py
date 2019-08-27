@@ -37,7 +37,6 @@ ROH_FORMAT = ['chrom', 'coverage', 'pos']
 ROH_ORANGE = "#e89f00"
 
 
-
 get_color = {
     # Cytoband colors
     'gneg': "#f7f7f7",
@@ -57,7 +56,6 @@ get_color = {
     'UPD_MATERNAL_ORIGIN': "#aa2200",     # Red
     'UPD_PATERNAL_ORIGIN': "#0044ff"     # Blue
 }
-
 
 
 def bed_collections_generatorCombine(df, y_positions, height,  **kwargs):
@@ -80,7 +78,6 @@ def bed_collections_generatorCombine(df, y_positions, height,  **kwargs):
                                    label = chrom)
 
 
-
 def bed_collections_generator(df, y_positions, height):
     """ Interate dataframe
     Yeilds:
@@ -91,7 +88,6 @@ def bed_collections_generator(df, y_positions, height):
         xranges = group[['start', 'width']].values
         yield BrokenBarHCollection(
             xranges, yrange, facecolors=group['colors'], label =chrom)
-
 
 
 def coverage_generator(df, data_state):
@@ -109,7 +105,6 @@ def coverage_generator(df, data_state):
              'x': group['pos'].values,
              'y': group[data_state].values }
         yield c
-
 
 
 def coverage_generatorCombine(df, y_positions, height):
@@ -131,17 +126,14 @@ def coverage_generatorCombine(df, y_positions, height):
             xranges, yrange, facecolors=group['colors'], label =chrom)
 
 
-
 def print_settings(ax):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         ax.set_axis_off()    # Remove black line surrounding pic.
 
 
-
 def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
-    """Print one chromosomes per image file
-    """
+    """Print one chromosomes per image file"""
     fig = plt.figure(figsize=(10, .5))
     ax = fig.add_subplot(111)
 
@@ -156,16 +148,8 @@ def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
         ax.cla()             # clear canvas before next iteration
 
 
-
-def test():
-    print("autoload NO WAY?")
-
-
-
 def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
-    """
-    Print all chromosomes in a single PNG picture.
-    """
+    """Print all chromosomes in a single PNG picture"""
     fig = plt.figure(figsize=FIGSIZE)
     ax = fig.add_subplot(111)
     for c in bed_collections_generatorCombine(df, chrom_ybase, HEIGHT):
@@ -179,12 +163,9 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
 
 
-
 def bed_to_dataframe(file, spec):
-    """Read a bed file into a Pandas dataframe according to 'spec'
-    """
+    """Read a bed file into a Pandas dataframe according to 'spec' """
     return pandas.read_csv(file, names=spec, sep ='\t', skiprows=1)
-
 
 
 def wig_to_dataframe(infile, step, format):
@@ -217,7 +198,6 @@ def wig_to_dataframe(infile, step, format):
     return df
 
 
-
 def graph_coordinates(list_of_chromosomes):
     """Iterate through list of chromosomes and return X
     (as center for graph) and Y coordinates for plotting.
@@ -236,7 +216,6 @@ def graph_coordinates(list_of_chromosomes):
         chrom_centers[chrom] = ybase + HEIGHT / 2.
         ybase += HEIGHT + SPACE
     return chrom_ybase, chrom_centers
-
 
 
 def plot_ideogram(file, *args, **kwargs):
@@ -271,7 +250,6 @@ def plot_ideogram(file, *args, **kwargs):
         print_combined_pic(df, chrom_ybase, chrom_centers, file, outd, chromosome_list)
     else:
         print_individual_pics(df, chrom_ybase, chrom_centers, file, outd)
-
 
 
 def plot_upd(file, *args, **kwargs):
@@ -315,7 +293,6 @@ def plot_upd(file, *args, **kwargs):
         print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd, infile)
 
 
-
 def plot_roh(file, *args, **kwargs):
     """Outputs png:s of ROH data given on WIG format
 
@@ -354,7 +331,6 @@ def plot_roh(file, *args, **kwargs):
     print_roh(df, file, outd, combine, normalize)
 
 
-
 def print_roh(df, file, outd, combine, normalize):
     data_state = 'normalized_coverage' if normalize else 'coverage'
 
@@ -376,7 +352,6 @@ def print_roh(df, file, outd, combine, normalize):
         # TODO:
         print("Combined ROH png not implemented!")
         False
-
 
 
 def main():
