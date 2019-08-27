@@ -22,7 +22,7 @@ import numpy as np
 import pandas
 import re
 import sys
-from utils import read_cfg, filter_dataframe, png_filename, outpath
+from .utils import read_cfg, filter_dataframe, png_filename, outpath
 
 PADDING = 200000
 HEIGHT = 1
@@ -386,3 +386,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
