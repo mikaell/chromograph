@@ -12,7 +12,6 @@ Further info:
 """
 
 # TODO: instead of padding look-ahead and contsrict if overlap
-# TODO: return True|False from interface functions?
 # TODO: combined ROH image
 
 import os
