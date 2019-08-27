@@ -22,6 +22,7 @@ from matplotlib.collections import BrokenBarHCollection
 import numpy as np
 import pandas
 import re
+import sys
 from utils import read_cfg, filter_dataframe, png_filename, outpath
 
 PADDING = 200000
@@ -403,6 +404,10 @@ def main():
     if args.rohfile:
         plot_roh(args.rohfile, args.combine, step=args.step)
 
+    if len(sys.argv[1:])==0:
+        parser.print_help()
+        # parser.print_usage() # for just the usage line
+        parser.exit()
 
 
 if __name__ == "__main__":
