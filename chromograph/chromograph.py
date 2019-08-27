@@ -40,14 +40,14 @@ ROH_ORANGE = "#e89f00"
 
 get_color = {
     # Cytoband colors
-    'gneg': "#111111",
+    'gneg': "#f7f7f7",
     'gpos25': "#666666",
-    'gpos50': "#444444",
-    'gpos75': "#222222",
-    'gpos100': "#ffffff",
-    'acen': "#884444",
+    'gpos50': "#606060",
+    'gpos75': "#2e2e2e",
+    'gpos100': "#121212",
+    'acen': "#b56666",
     'gvar': "#777777",
-    'stalk': "#aaaaaa",
+    'stalk': "#444444",
 
     # UPD colors
     'PB_HOMOZYGOUS': "#222222",
