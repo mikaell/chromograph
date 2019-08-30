@@ -22,7 +22,7 @@ import numpy as np
 import pandas
 import re
 import sys
-from chr_utils import read_cfg, filter_dataframe, png_filename, outpath
+from .chr_utils import read_cfg, filter_dataframe, png_filename, outpath
 
 PADDING = 200000
 HEIGHT = 1
@@ -274,7 +274,7 @@ def plot_upd(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if 'outd' in kwargs:
+    if kwargs['outd'] is not None:
         outd = kwargs['outd']
 
     print("Plot UPD with settings\ncombine:{}".format(combine))
@@ -285,11 +285,10 @@ def plot_upd(file, *args, **kwargs):
     df['width'] = (df.end-df.start) + PADDING
     df['colors'] = df['updType'].apply(lambda x: get_color[x])
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
-    outpath = make_outpath()
     if combine:
-        print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chromosome_list)
+        print_combined_pic(df, chrom_ybase, chrom_centers, file, outd, chromosome_list)
     else:
-        print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd, infile)
+        print_individual_pics(df, chrom_ybase, chrom_centers, file, outd)
 
 
 def plot_roh(file, *args, **kwargs):
@@ -315,8 +314,8 @@ def plot_roh(file, *args, **kwargs):
         combine = True
     if 'normalize' in args:
         normalize = True
-    if 'outd' in kwargs:
-        oud = kwargs['outd']
+    if kwargs['outd'] is not None:
+        outd = kwargs['outd']
     if 'step' in kwargs:
         fixedStep = kwargs['step']
 
@@ -364,17 +363,19 @@ def main():
     parser.add_argument("-r", "--roh", dest="rohfile",
                         help="input ROH (fixed step wig-file)",
                         metavar="FILE")
+    parser.add_argument("-o", "--outd", dest="outd",
+                        help="output dir",
+                        metavar="FILE")
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
     parser.add_argument("-c", "--combine",
                         help="plot all graphs in one file, default one graph per file",
                         action='store_true')
-    args = parser.parse_args()
 
-    print(args.step)
+    args = parser.parse_args()
     if args.ideofile:
-        plot_ideogram(args.ideofile, args.combine)
+        plot_ideogram(args.ideofile, args.combine, outd = args.outd)
     if args.updfile:
-        plot_upd(args.updfile, args.combine)
+        plot_upd(args.updfile, args.combine, outd = args.outd)
     if args.rohfile:
         plot_roh(args.rohfile, args.combine, step=args.step)
 
