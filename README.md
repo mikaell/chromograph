@@ -19,9 +19,9 @@ Chromograph as used from the command line.
 Usage: chromograph [COMMAND] [OPTIONS]
 
 Command (one must be provided):
-  --upd <filepath>
-  --ideo <filepath>
-  --roh <filepath>
+  --upd <BED-filepath>
+  --ideo <BED-filepath>
+  --roh <WIG-filepath>
 
 Options:
   --help        Show help message
