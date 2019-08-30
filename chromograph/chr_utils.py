@@ -3,8 +3,19 @@ import yaml
 
 def read_cfg():
     """Read Yaml config"""
-    with open("config_chromograph.yml", 'r') as ymlfile:
-        return yaml.safe_load(ymlfile)
+    try:
+        with open("config_chromograph.yml", 'r') as ymlfile:
+            return yaml.safe_load(ymlfile)
+    except FileNotFoundError:
+        return \
+       {'chromosome_int': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
+                           '11', '12', '13', '14', '15', '16', '17', '18',
+                           '19', '20','21', '22', 'M', 'X', 'Y'],
+        'chromosome_str': ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7',
+                           'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
+                           'chr14' , 'chr15', 'chr16', 'chr17', 'chr18', 'chr19',
+                           'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY']}
+
 
 
 def filter_dataframe(frame, list_of_chromosomes):
