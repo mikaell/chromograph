@@ -56,6 +56,10 @@ get_color = {
     'UPD_PATERNAL_ORIGIN': "#0044ff"     # Blue
 }
 
+def assure_dir(outd):
+    """Create directory 'outd' if it does not exist"""
+    if not os.path.exists(outd):
+        os.makedirs(outd)
 
 def bed_collections_generatorCombine(df, y_positions, height,  **kwargs):
     """ Iterate dataframe
@@ -237,6 +241,7 @@ def plot_ideogram(file, *args, **kwargs):
         combine = True
     if 'outd' in kwargs:
         outd = kwargs['outd']
+        assure_dir(outd)
 
     print("Plot ideograms with settings\ncombine:{}\noutd:{}".format(combine, outd))
     chromosome_list = cfg['chromosome_str']
@@ -276,6 +281,7 @@ def plot_upd(file, *args, **kwargs):
         combine = True
     if kwargs['outd'] is not None:
         outd = kwargs['outd']
+        assure_dir(outd)
 
     print("Plot UPD with settings\ncombine:{}".format(combine))
     df = bed_to_dataframe(file, UPD_FORMAT)
@@ -316,6 +322,7 @@ def plot_roh(file, *args, **kwargs):
         normalize = True
     if kwargs['outd'] is not None:
         outd = kwargs['outd']
+        assure_dir(outd)
     if 'step' in kwargs:
         fixedStep = kwargs['step']
 
