@@ -79,7 +79,7 @@ ROH wig files are supported on format:
 ```
 
 ### Requirements
-Chromograph runs in Python 3. 
+Chromograph runs in Python 3.
 
 Package requirements:
  * MatPlotLib
@@ -89,6 +89,5 @@ Package requirements:
 
 ## Installation
 ```
-pip install numpy; pip install matplotlib; pip install pandas
-pip install -e .
+pip install -r requirements.txt -e .
 ```
