@@ -46,4 +46,3 @@ def outpath(outd, infile, label):
     outpath = outd + "/" + outfile
     print("outfile: {}".format(outpath))
     return outpath
-

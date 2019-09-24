@@ -14,6 +14,8 @@ Further info:
 # TODO: instead of padding look-ahead and contsrict if overlap
 # TODO: combined ROH image
 
+from chromograph import __version__
+
 import os
 from argparse import ArgumentParser
 from matplotlib import pyplot as plt
@@ -376,6 +378,9 @@ def main():
     parser.add_argument("-c", "--combine",
                         help="plot all graphs in one file, default one graph per file",
                         action='store_true')
+    parser.add_argument("--version",
+                        help="Display program version ({}) and exit.".format(__version__),
+                        action='version', version="chromograph {}".format(__version__))
 
     args = parser.parse_args()
     if args.ideofile:
@@ -393,4 +398,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
