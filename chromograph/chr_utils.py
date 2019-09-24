@@ -1,10 +1,12 @@
 import os
 import yaml
+import pkg_resources
 
 def read_cfg():
     """Read Yaml config"""
+    cfg_path = pkg_resources.resource_filename('chromograph', 'config_chromograph.yml')
     try:
-        with open("config_chromograph.yml", 'r') as ymlfile:
+        with open(cfg_path, 'r') as ymlfile:
             return yaml.safe_load(ymlfile)
     except FileNotFoundError:
         return \
@@ -14,7 +16,8 @@ def read_cfg():
         'chromosome_str': ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7',
                            'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
                            'chr14' , 'chr15', 'chr16', 'chr17', 'chr18', 'chr19',
-                           'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY']}
+                           'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY'],
+        'wig_step': 5000}
 
 
 
