@@ -1,10 +1,12 @@
 import os
 import yaml
+import pkg_resources
 
 def read_cfg():
     """Read Yaml config"""
+    cfg_path = pkg_resources.resource_filename('chromograph', 'config_chromograph.yml')
     try:
-        with open("config_chromograph.yml", 'r') as ymlfile:
+        with open(cfg_path, 'r') as ymlfile:
             return yaml.safe_load(ymlfile)
     except FileNotFoundError:
         return \

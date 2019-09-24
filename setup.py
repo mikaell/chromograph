@@ -44,6 +44,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=REQUIRED,
+    data_files = [('config', ['chromograph/config_chromograph.yml'])],
     entry_points=dict(
         console_scripts=[
             'chromograph = chromograph.chromograph:main',
