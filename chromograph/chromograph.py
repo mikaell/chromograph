@@ -279,7 +279,7 @@ def plot_upd(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if kwargs['outd'] is not None:
+    if 'outd' in kwargs:        
         outd = kwargs['outd']
         assure_dir(outd)
 
@@ -315,12 +315,11 @@ def plot_roh(file, *args, **kwargs):
     combine = False
     fixedStep = cfg['wig_step']
     normalize = False
-
     if 'combine' in args:
         combine = True
     if 'normalize' in args:
         normalize = True
-    if kwargs['outd'] is not None:
+    if 'outd' in kwargs:        
         outd = kwargs['outd']
         assure_dir(outd)
     if 'step' in kwargs:
@@ -382,9 +381,9 @@ def main():
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd = args.outd)
     if args.updfile:
-        plot_upd(args.updfile, args.combine, outd = args.outd)
+        plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
     if args.rohfile:
-        plot_roh(args.rohfile, args.combine, step=args.step)
+        plot_roh(args.rohfile, args.combine, outd = args.outd, step=args.step)
 
     if len(sys.argv[1:])==0:
         parser.print_help()
