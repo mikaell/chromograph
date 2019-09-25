@@ -322,11 +322,11 @@ def plot_roh(file, *args, **kwargs):
         combine = True
     if 'normalize' in args:
         normalize = True
-    if 'outd' in kwargs:
+    if 'outd' in kwargs and kwargs['outd'] is not None:
         print("outd?")
         outd = kwargs['outd']
         assure_dir(outd)
-    if 'step' in kwargs:
+    if 'step' in kwargs and kwargs['step'] is not None:
         fixedStep = kwargs['step']
 
     print("Plot ROH with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
