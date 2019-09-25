@@ -24,7 +24,8 @@ import numpy as np
 import pandas
 import re
 import sys
-from .chr_utils import read_cfg, filter_dataframe, png_filename, outpath
+from .chr_utils import read_cfg, filter_dataframe, png_filename, outpath, parseWigDeclarationLine
+
 
 PADDING = 200000
 HEIGHT = 1
@@ -158,7 +159,6 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     fig = plt.figure(figsize=FIGSIZE)
     ax = fig.add_subplot(111)
     for c in bed_collections_generatorCombine(df, chrom_ybase, HEIGHT):
-        print("ax add")
         ax.add_collection(c)
 
     ax.set_yticks([chrom_centers[i] for i in chr_list])
@@ -281,7 +281,7 @@ def plot_upd(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if 'outd' in kwargs:        
+    if 'outd' in kwargs:
         outd = kwargs['outd']
         assure_dir(outd)
 
@@ -313,15 +313,17 @@ def plot_roh(file, *args, **kwargs):
 
     """
     cfg = read_cfg()
+    decl = parseWigDeclarationLine(file, ' ')
     outd = os.path.dirname(file)
     combine = False
-    fixedStep = cfg['wig_step']
+    fixedStep = decl['step'] #cfg['wig_step']
     normalize = False
     if 'combine' in args:
         combine = True
     if 'normalize' in args:
         normalize = True
-    if 'outd' in kwargs:        
+    if 'outd' in kwargs:
+        print("outd?")
         outd = kwargs['outd']
         assure_dir(outd)
     if 'step' in kwargs:
@@ -330,7 +332,7 @@ def plot_roh(file, *args, **kwargs):
     print("Plot ROH with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
           .format(fixedStep, outd, combine, normalize))
 
-    chromosome_list = cfg['chromosome_str']
+    chromosome_list = listType(decl['chrom'], cfg)
     df = wig_to_dataframe(file, fixedStep, ROH_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
     df['normalized_coverage']=(df.coverage /df.coverage.mean()).round(0)
@@ -339,7 +341,6 @@ def plot_roh(file, *args, **kwargs):
 
 def print_roh(df, file, outd, combine, normalize):
     data_state = 'normalized_coverage' if normalize else 'coverage'
-
     if not combine:           # Plot one chromosome per png
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
@@ -358,6 +359,13 @@ def print_roh(df, file, outd, combine, normalize):
         # TODO:
         print("Combined ROH png not implemented!")
         False
+
+
+def listType(chr_type, cfg):
+    if chr_type == 'int':
+        return cfg['chromosome_int']
+    else:
+        return cfg['chromosome_str']
 
 
 def main():

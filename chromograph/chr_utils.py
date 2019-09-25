@@ -2,6 +2,7 @@ import os
 import yaml
 import pkg_resources
 
+
 def read_cfg():
     """Read Yaml config"""
     cfg_path = pkg_resources.resource_filename('chromograph', 'config_chromograph.yml')
@@ -46,3 +47,46 @@ def outpath(outd, infile, label):
     outpath = outd + "/" + outfile
     print("outfile: {}".format(outpath))
     return outpath
+
+
+def parseWigDeclarationLine(wigfile, separator):
+    """Parse a wig file's declaration line on format:
+
+           fixedStep  chrom=chrN start=position  step=stepInterval
+
+        Only supports fixed step
+    """
+    max_iterations = 12         # parse no more lines after
+    decl = {}
+    i = 0
+    fp = open(wigfile)
+    while i< max_iterations:
+        line = fp.readline()
+        x, *xs = line.split(separator)
+        if x == 'fixedStep' and 'chrM' not in xs[0]:
+            for j in xs:
+                k,v = j.split("=")
+                decl[k] =v
+            cast(decl)
+            return decl
+        i+=1
+    raise Warning('declarationNotFound')
+
+
+
+def cast(decl):
+    decl['start'] = int(decl['start'])
+    decl['step'] = int(decl['step'])
+    decl['chrom'] = chrFormat(decl['chrom'])
+
+
+def chrFormat(chr):
+    """If chromosome declaration is
+    'chr1' return 'str'
+    '1' retirn 'int'
+    """
+    try:
+        int(chr)
+        return 'int'
+    except ValueError:
+        return 'str'
