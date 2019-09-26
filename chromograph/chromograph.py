@@ -241,7 +241,7 @@ def plot_ideogram(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if 'outd' in kwargs:
+    if 'outd' in kwargs and kwargs['outd'] is not None::
         outd = kwargs['outd']
         assure_dir(outd)
 
@@ -281,7 +281,7 @@ def plot_upd(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if 'outd' in kwargs:
+    if 'outd' in kwargs and kwargs['outd'] is not None:
         outd = kwargs['outd']
         assure_dir(outd)
 
