@@ -35,8 +35,8 @@ FIGSIZE = (6,8)
 FIGSIZE_SINGLE = (8,8)
 UPD_FORMAT = ['chrom', 'start', 'end', 'updType']
 IDEOGRAM_FORMAT = ['chrom', 'start', 'end', 'name', 'gStain']
-ROH_FORMAT = ['chrom', 'coverage', 'pos']
-ROH_ORANGE = "#e89f00"
+WIG_FORMAT = ['chrom', 'coverage', 'pos']
+WIG_ORANGE = "#e89f00"
 
 
 get_color = {
@@ -61,6 +61,7 @@ get_color = {
 
 def assure_dir(outd):
     """Create directory 'outd' if it does not exist"""
+    print("outd: {}".format(outd))
     if not os.path.exists(outd):
         os.makedirs(outd)
 
@@ -241,7 +242,7 @@ def plot_ideogram(file, *args, **kwargs):
     combine = False
     if 'combine' in args:
         combine = True
-    if 'outd' in kwargs and kwargs['outd'] is not None::
+    if 'outd' in kwargs and kwargs['outd'] is not None:
         outd = kwargs['outd']
         assure_dir(outd)
 
@@ -299,8 +300,8 @@ def plot_upd(file, *args, **kwargs):
         print_individual_pics(df, chrom_ybase, chrom_centers, file, outd)
 
 
-def plot_roh(file, *args, **kwargs):
-    """Outputs png:s of ROH data given on WIG format
+def plot_wig(file, *args, **kwargs):
+    """Outputs png:s of data given on WIG format
 
     Args:
         file(str)
@@ -329,24 +330,24 @@ def plot_roh(file, *args, **kwargs):
     if 'step' in kwargs and kwargs['step'] is not None:
         fixedStep = kwargs['step']
 
-    print("Plot ROH with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
+    print("Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
           .format(fixedStep, outd, combine, normalize))
 
     chromosome_list = listType(decl['chrom'], cfg)
-    df = wig_to_dataframe(file, fixedStep, ROH_FORMAT)
+    df = wig_to_dataframe(file, fixedStep, WIG_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
     df['normalized_coverage']=(df.coverage /df.coverage.mean()).round(0)
-    print_roh(df, file, outd, combine, normalize)
+    print_wig(df, file, outd, combine, normalize)
 
 
-def print_roh(df, file, outd, combine, normalize):
+def print_wig(df, file, outd, combine, normalize):
     data_state = 'normalized_coverage' if normalize else 'coverage'
     if not combine:           # Plot one chromosome per png
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
             fig.max_open_warning = 28
             print_settings(ax)
-            ax.stackplot(c['x'], c['y'], colors = ROH_ORANGE)
+            ax.stackplot(c['x'], c['y'], colors = WIG_ORANGE)
             plt.ylim(0,5)
             ax.set_ylim(bottom=0)
             ax.set_xlim((0, 255359341))      # try to mimic nice bounds
@@ -357,7 +358,7 @@ def print_roh(df, file, outd, combine, normalize):
             fig.clf()             # clear figure before next iteration
     else:
         # TODO:
-        print("Combined ROH png not implemented!")
+        print("Combined WIG png not implemented!")
         False
 
 
@@ -376,8 +377,8 @@ def main():
     parser.add_argument("-e", "--ideo", dest="ideofile",
                         help="input ideogram (bed-file) on format {}".format(IDEOGRAM_FORMAT),
                         metavar="FILE")
-    parser.add_argument("-r", "--roh", dest="rohfile",
-                        help="input ROH (fixed step wig-file)",
+    parser.add_argument("-w", "--coverage", dest="wigfile",
+                        help="input fixed step wig-file",
                         metavar="FILE")
     parser.add_argument("-o", "--outd", dest="outd",
                         help="output dir",
@@ -395,8 +396,8 @@ def main():
         plot_ideogram(args.ideofile, args.combine, outd = args.outd)
     if args.updfile:
         plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
-    if args.rohfile:
-        plot_roh(args.rohfile, args.combine, outd = args.outd, step=args.step)
+    if args.wigfile:
+        plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step)
 
     if len(sys.argv[1:])==0:
         parser.print_help()
