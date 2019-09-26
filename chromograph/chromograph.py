@@ -319,10 +319,13 @@ def plot_wig(file, *args, **kwargs):
     combine = False
     fixedStep = decl['step'] #cfg['wig_step']
     normalize = False
+    color = WIG_ORANGE          # set default color, override if rgb in kwargs
     if 'combine' in args:
         combine = True
     if 'normalize' in args:
         normalize = True
+    if 'rgb' in kwargs and kwargs['rgb'] is not None:
+        color = toRGB(kwargs['rgb'])
     if 'outd' in kwargs and kwargs['outd'] is not None:
         print("outd?")
         outd = kwargs['outd']
@@ -337,17 +340,17 @@ def plot_wig(file, *args, **kwargs):
     df = wig_to_dataframe(file, fixedStep, WIG_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
     df['normalized_coverage']=(df.coverage /df.coverage.mean()).round(0)
-    print_wig(df, file, outd, combine, normalize)
+    print_wig(df, file, outd, combine, normalize, color)
 
 
-def print_wig(df, file, outd, combine, normalize):
+def print_wig(df, file, outd, combine, normalize, color):
     data_state = 'normalized_coverage' if normalize else 'coverage'
     if not combine:           # Plot one chromosome per png
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
             fig.max_open_warning = 28
             print_settings(ax)
-            ax.stackplot(c['x'], c['y'], colors = WIG_ORANGE)
+            ax.stackplot(c['x'], c['y'], colors=color)
             plt.ylim(0,5)
             ax.set_ylim(bottom=0)
             ax.set_xlim((0, 255359341))      # try to mimic nice bounds
@@ -360,6 +363,13 @@ def print_wig(df, file, outd, combine, normalize):
         # TODO:
         print("Combined WIG png not implemented!")
         False
+
+def toRGB(color):
+    x, *xs = str(color)
+    if x is '#':
+        return color            # color was alread "#123456"
+    else:
+        return '#'+ str(color)
 
 
 def listType(chr_type, cfg):
@@ -383,6 +393,9 @@ def main():
     parser.add_argument("-o", "--outd", dest="outd",
                         help="output dir",
                         metavar="FILE")
+    parser.add_argument("-r", "--rgb", dest="rgb",
+                        help="graph color in RGB hex (only in combination with --coverage)",
+                        metavar="FILE")
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
     parser.add_argument("-c", "--combine",
                         help="plot all graphs in one file, default one graph per file",
@@ -397,7 +410,7 @@ def main():
     if args.updfile:
         plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
     if args.wigfile:
-        plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step)
+        plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step, rgb=args.rgb)
 
     if len(sys.argv[1:])==0:
         parser.print_help()
