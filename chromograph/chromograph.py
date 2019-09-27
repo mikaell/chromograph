@@ -382,11 +382,10 @@ def plot_regions(file, *args, **kwargs):
     if 'outd' in kwargs and kwargs['outd'] is not None:
         outd = kwargs['outd']
         assure_dir(outd)
-
+    print("Plot UPD REGIONS with settings \noutd:{}".format(outd))
     with open(file) as fp:
         for line in fp:
             l.append(parse_updRegions(line, '\t'))
-    print(l)
     bb = [sitesBrokenBar(i) for i in l]
 
     # Prepare canvas and plot
@@ -405,10 +404,6 @@ def sitesBrokenBar(region):
     """ Make a MathPlotLIb 'BrokenbarCollection' from upd sites data"""
     start = int(region['start'])
     width = int(region['stop']) - int(region['start'])
-    print("------------")
-    print(region)
-    print(width)
-    print(region['desc']['origin'])
     color = get_color[ region['desc']['origin'] ]
     xranges = [[start, width]]
     yrange = (0, 1)
@@ -438,7 +433,7 @@ def main():
     parser.add_argument("-u", "--upd", dest="updfile",
                         help="input UPD sites file on format {}".format(UPD_FORMAT),
                         metavar="FILE")
-    parser.add_argument("-", "--regions", dest="regfile",
+    parser.add_argument("-g", "--regions", dest="regionsfile",
                         help="input UPD regions file",
                         metavar="FILE")
     parser.add_argument("-e", "--ideo", dest="ideofile",
@@ -468,8 +463,8 @@ def main():
         plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
     if args.wigfile:
         plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step, rgb=args.rgb)
-    if args.regfile:
-        plot_regions(args.regfile, outd = args.outd)
+    if args.regionsfile:
+        plot_regions(args.regionsfile, outd = args.outd)
     if len(sys.argv[1:])==0:
         parser.print_help()
         # parser.print_usage() # for just the usage line
