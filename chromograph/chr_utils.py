@@ -57,27 +57,23 @@ def parseWigDeclarationLine(wigfile, separator):
         Only supports fixed step
     """
     max_iterations = 12         # parse no more lines after
-    decl = {}
     i = 0
     fp = open(wigfile)
     while i< max_iterations:
         line = fp.readline()
         x, *xs = line.split(separator)
         if x == 'fixedStep' and 'chrM' not in xs[0]:
-            for j in xs:
-                k,v = j.split("=")
-                decl[k] =v
-            cast(decl)
-            return decl
+            declaration = makeDict(xs)   # split xs on '=' to get a dict
+            return cast(declaration)
         i+=1
     raise Warning('declarationNotFound')
-
 
 
 def cast(decl):
     decl['start'] = int(decl['start'])
     decl['step'] = int(decl['step'])
     decl['chrom'] = chrFormat(decl['chrom'])
+    return decl
 
 
 def chrFormat(chr):
@@ -90,3 +86,15 @@ def chrFormat(chr):
         return 'int'
     except ValueError:
         return 'str'
+
+
+def makeDict(kv_list):
+    """Iterate a list and split every element on '=' returning
+       a dictionary.
+          * returned keys in low case
+    """
+    d = {}
+    for i in kv_list:
+        k,v = i.split("=")
+        d[k.lower()] = v
+    return d
