@@ -24,7 +24,9 @@ import numpy as np
 import pandas
 import re
 import sys
-from .chr_utils import read_cfg, filter_dataframe, png_filename, outpath, parseWigDeclarationLine
+from .chr_utils import (read_cfg, filter_dataframe, png_filename,
+                        outpath, parseWigDeclarationLine,
+                        parse_updRegions)
 
 
 PADDING = 200000
@@ -50,13 +52,17 @@ get_color = {
     'gvar': "#777777",
     'stalk': "#444444",
 
-    # UPD colors
+    # UPD sites colors
     'PB_HOMOZYGOUS': "#222222",
     'ANTI_UPD': "#555555",
     'PB_HETEROZYGOUS': "#888888",
     'UNINFORMATIVE': "#333333",
     'UPD_MATERNAL_ORIGIN': "#aa2200",     # Red
-    'UPD_PATERNAL_ORIGIN': "#0044ff"     # Blue
+    'UPD_PATERNAL_ORIGIN': "#0044ff",     # Blue
+
+    # UPD region colors
+    'PATERNAL': "#0044ff",     # Blue
+    'MATERNAL': "#aa2200"
 }
 
 def assure_dir(outd):
@@ -93,6 +99,8 @@ def bed_collections_generator(df, y_positions, height):
     for chrom, group in df.groupby('chrom'):
         yrange = (0, height)
         xranges = group[['start', 'width']].values
+        print("xranges: {}".format(xranges))
+        print("yrange: {}".format(yrange))
         yield BrokenBarHCollection(
             xranges, yrange, facecolors=group['colors'], label =chrom)
 
@@ -364,6 +372,52 @@ def print_wig(df, file, outd, combine, normalize, color):
         print("Combined WIG png not implemented!")
         False
 
+
+def plot_regions(file, *args, **kwargs):
+    """  """
+
+    # Parse sites upd file to brokenbarcollection
+    l = []
+    outd = os.path.dirname(file)
+    if 'outd' in kwargs and kwargs['outd'] is not None:
+        outd = kwargs['outd']
+        assure_dir(outd)
+
+    with open(file) as fp:
+        for line in fp:
+            l.append(parse_updRegions(line, '\t'))
+    print(l)
+    bb = [sitesBrokenBar(i) for i in l]
+
+    # Prepare canvas and plot
+    fig = plt.figure(figsize=(10, .5))
+    ax = fig.add_subplot(111)
+    for collection in bb:
+        ax.add_collection(collection)
+        print_settings(ax)
+        ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
+        outfile = outpath(outd, file, collection.get_label() )
+        fig.savefig(outfile, transparent = False, bbox_inches='tight', pad_inches=0)
+        ax.cla()             # clear canvas before next iteration
+
+
+def sitesBrokenBar(region):
+    """ Make a MathPlotLIb 'BrokenbarCollection' from upd sites data"""
+    start = int(region['start'])
+    width = int(region['stop']) - int(region['start'])
+    print("------------")
+    print(region)
+    print(width)
+    print(region['desc']['origin'])
+    color = get_color[ region['desc']['origin'] ]
+    xranges = [[start, width]]
+    yrange = (0, 1)
+    return BrokenBarHCollection(xranges,
+                                yrange,
+                                facecolors= color,
+                                label = region['chr'])
+
+
 def toRGB(color):
     x, *xs = str(color)
     if x is '#':
@@ -382,7 +436,10 @@ def listType(chr_type, cfg):
 def main():
     parser = ArgumentParser()
     parser.add_argument("-u", "--upd", dest="updfile",
-                        help="input UPD on format {}".format(UPD_FORMAT),
+                        help="input UPD sites file on format {}".format(UPD_FORMAT),
+                        metavar="FILE")
+    parser.add_argument("-", "--regions", dest="regfile",
+                        help="input UPD regions file",
                         metavar="FILE")
     parser.add_argument("-e", "--ideo", dest="ideofile",
                         help="input ideogram (bed-file) on format {}".format(IDEOGRAM_FORMAT),
@@ -411,7 +468,8 @@ def main():
         plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
     if args.wigfile:
         plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step, rgb=args.rgb)
-
+    if args.regfile:
+        plot_regions(args.regfile, outd = args.outd)
     if len(sys.argv[1:])==0:
         parser.print_help()
         # parser.print_usage() # for just the usage line

@@ -88,6 +88,12 @@ def chrFormat(chr):
         return 'str'
 
 
+def parse_updRegions(line, separator):
+    """Parse sites upt file bed file"""
+    [chr, start, stop, desc] = line.split()
+    return {'chr': chr, 'start': start, 'stop': stop, 'desc': makeDict(desc.split(';'))}
+
+
 def makeDict(kv_list):
     """Iterate a list and split every element on '=' returning
        a dictionary.
@@ -98,3 +104,5 @@ def makeDict(kv_list):
         k,v = i.split("=")
         d[k.lower()] = v
     return d
+
+
