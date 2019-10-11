@@ -410,7 +410,7 @@ def sitesBrokenBar(region):
 def toRGB(color):
     x, *xs = str(color)
     if x is '#':
-        return color            # color was alread "#123456"
+        return color            # color was alread on format "#123456"
     else:
         return '#'+ str(color)
 
