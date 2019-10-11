@@ -99,8 +99,6 @@ def bed_collections_generator(df, y_positions, height):
     for chrom, group in df.groupby('chrom'):
         yrange = (0, height)
         xranges = group[['start', 'width']].values
-        print("xranges: {}".format(xranges))
-        print("yrange: {}".format(yrange))
         yield BrokenBarHCollection(
             xranges, yrange, facecolors=group['colors'], label =chrom)
 
@@ -141,24 +139,23 @@ def coverage_generatorCombine(df, y_positions, height):
             xranges, yrange, facecolors=group['colors'], label =chrom)
 
 
-def print_settings(ax):
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-        ax.set_axis_off()    # Remove black line surrounding pic.
+def common_settings(ax):
+    """Common Matplotlib settings"""
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    ax.set_axis_off()    # Remove black line surrounding pic.
 
 
 def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
     """Print one chromosomes per image file"""
     fig = plt.figure(figsize=(10, .5))
     ax = fig.add_subplot(111)
-
+    plt.rcParams.update({'figure.max_open_warning': 0})
     for collection in bed_collections_generator(df, chrom_ybase, HEIGHT):
         ax.add_collection(collection)
-        print_settings(ax)
+        common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
-
         outfile = outpath(outd, infile, collection.get_label() )
-
         fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
 
@@ -340,7 +337,6 @@ def plot_wig(file, *args, **kwargs):
         assure_dir(outd)
     if 'step' in kwargs and kwargs['step'] is not None:
         fixedStep = kwargs['step']
-
     print("Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
           .format(fixedStep, outd, combine, normalize))
 
@@ -356,8 +352,7 @@ def print_wig(df, file, outd, combine, normalize, color):
     if not combine:           # Plot one chromosome per png
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
-            fig.max_open_warning = 28
-            print_settings(ax)
+            common_settings(ax)
             ax.stackplot(c['x'], c['y'], colors=color)
             plt.ylim(0,5)
             ax.set_ylim(bottom=0)
@@ -365,11 +360,10 @@ def print_wig(df, file, outd, combine, normalize, color):
             fig.tight_layout()
             outfile = outpath(outd, file, c['label'] )
             fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
-            ax.cla()              # clear axis before next iteration
-            fig.clf()             # clear figure before next iteration
+            plt.close(fig)                   # save memory
     else:
         # TODO:
-        print("Combined WIG png not implemented!")
+        print("WARNING: Combined WIG png not implemented!")
         False
 
 
@@ -393,7 +387,7 @@ def plot_regions(file, *args, **kwargs):
     ax = fig.add_subplot(111)
     for collection in bb:
         ax.add_collection(collection)
-        print_settings(ax)
+        common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
         outfile = outpath(outd, file, collection.get_label() )
         fig.savefig(outfile, transparent = False, bbox_inches='tight', pad_inches=0)
