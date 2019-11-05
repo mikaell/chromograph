@@ -18,8 +18,6 @@ from chromograph import __version__
 
 import os
 from argparse import ArgumentParser
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.collections import BrokenBarHCollection
 import numpy as np
