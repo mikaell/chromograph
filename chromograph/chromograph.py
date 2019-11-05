@@ -29,6 +29,7 @@ from .chr_utils import (read_cfg, filter_dataframe, png_filename,
                         parse_updRegions)
 
 PADDING = 200000
+COVERAGE_END = 249255000        # write all coverage files to the same size canvas
 HEIGHT = 1
 YBASE = 0
 SPACE = 1
@@ -199,7 +200,9 @@ def wig_to_dataframe(infile, step, format):
         except ValueError:
             reresult = re.search("chrom=(\w*)", line) # find chromosome name in line
             if reresult:
-                last_pos = [chr, 0, 249255001] # writen in every set to give same scale when plotting
+                stop_pos = [chr, 0, pos + 5000] # write 0 at end removes linear slope
+                last_pos = [chr, 0, COVERAGE_END] # writen in every set to give same scale when plotting
+                coverage_data.append(stop_pos)
                 coverage_data.append(last_pos)
                 chr = reresult.group(1) # start working on next chromosome
                 pos =0
