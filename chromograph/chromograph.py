@@ -195,7 +195,7 @@ def wig_to_dataframe(infile, step, format):
         try:
             f = float(line)
             coverage_data.append([chr, f, pos])
-            pos += 5000
+            pos += step
         except ValueError:
             reresult = re.search("chrom=(\w*)", line) # find chromosome name in line
             if reresult:
