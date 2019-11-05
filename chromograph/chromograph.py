@@ -18,6 +18,8 @@ from chromograph import __version__
 
 import os
 from argparse import ArgumentParser
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.collections import BrokenBarHCollection
 import numpy as np
@@ -27,7 +29,6 @@ import sys
 from .chr_utils import (read_cfg, filter_dataframe, png_filename,
                         outpath, parseWigDeclarationLine,
                         parse_updRegions)
-
 
 PADDING = 200000
 HEIGHT = 1
