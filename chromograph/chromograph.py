@@ -327,9 +327,10 @@ def plot_wig(file, *args, **kwargs):
     fixedStep = decl['step'] #cfg['wig_step']
     normalize = False
     color = WIG_ORANGE          # set default color, override if rgb in kwargs
+
     if 'combine' in args:
         combine = True
-    if 'normalize' in args:
+    if 'norm' in args:
         normalize = True
     if 'rgb' in kwargs and kwargs['rgb'] is not None:
         color = toRGB(kwargs['rgb'])
@@ -357,6 +358,7 @@ def print_wig(df, file, outd, combine, normalize, color):
             common_settings(ax)
             ax.stackplot(c['x'], c['y'], colors=color)
             plt.ylim(0,5)
+            
             ax.set_ylim(bottom=0)
             ax.set_xlim((0, 255359341))      # try to mimic nice bounds
             fig.tight_layout()
@@ -444,6 +446,9 @@ def main():
     parser.add_argument("-r", "--rgb", dest="rgb",
                         help="graph color in RGB hex (only in combination with --coverage)",
                         metavar="FILE")
+    parser.add_argument("-n", "--norm", dest="norm",
+                        help="normalize data (only used for wig/coverage)",
+                        action='store_true')
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
     parser.add_argument("-c", "--combine",
                         help="plot all graphs in one file, default one graph per file",
@@ -453,12 +458,18 @@ def main():
                         action='version', version="chromograph {}".format(__version__))
 
     args = parser.parse_args()
+
+
+    # Make command line and library interfaces behave identical regarding args
+    args.norm = 'norm' if args.norm == True else None
+    args.combine = 'combine' if args.combine == True else None
+    
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd = args.outd)
     if args.updfile:
         plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
     if args.wigfile:
-        plot_wig(args.wigfile, args.combine, outd = args.outd, step=args.step, rgb=args.rgb)
+        plot_wig(args.wigfile, args.combine, args.norm, outd = args.outd, step=args.step, rgb=args.rgb)
     if args.regionsfile:
         plot_regions(args.regionsfile, outd = args.outd)
     if len(sys.argv[1:])==0:
