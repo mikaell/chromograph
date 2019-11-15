@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [0.1.2]
+
+### Added
+- Improved args handling
+
+### Fixed
+- Bug: Remove dependency on X display
+
+
+
 ## [0.1.1]
 ### Fixed
 - Configured and parameterized WIG step was previously ignored
