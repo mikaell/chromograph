@@ -256,9 +256,18 @@ def plot_ideogram(file, *args, **kwargs):
         assure_dir(outd)
 
     print("Plot ideograms with settings\ncombine:{}\noutd:{}".format(combine, outd))
-    chromosome_list = cfg['chromosome_str']
-    df = bed_to_dataframe(file, IDEOGRAM_FORMAT)
-    df = filter_dataframe(df, chromosome_list)      # delete chromosomes not in CHROMOSOME_LIST
+
+    # try two different chromosome formats, if both result in
+    # an empty dataframe, raise IdeoParseError
+    for setting in ['chromosome_str', 'chromosome_int']:
+        chromosome_list = cfg[setting]
+        df = bed_to_dataframe(file, IDEOGRAM_FORMAT)
+        # delete chromosomes not in CHROMOSOME_LIST
+        df = filter_dataframe(df, chromosome_list) 
+        if (df.size > 0):
+            break
+    if (df.size == 0):
+        raise Exception('Ideogram parsing')
     df['width'] = df.end - df.start
     df['colors'] = df['gStain'].apply(lambda x: get_color[x])
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
