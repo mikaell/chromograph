@@ -1,38 +1,35 @@
-#
-#
-#
+"""Pytests for Chromograph """
 import os
 import pandas as pd
-
-from chromograph.chr_utils import (chrFormat, cast, read_cfg, filter_dataframe,
+from chromograph.chr_utils import (chr_type_format, cast, read_cfg, filter_dataframe,
                                    png_filename, outpath, parse_wig_declaration,
                                    make_dict)
 
-def test_chrFormat():
+def test_chr_type_format():
     # GIVEN a string integer, i.e. '1'
     # THEN chrFormat returns 'int'
-    assert chrFormat('1') == 'int'
+    assert chr_type_format('1') == 'int'
 
 
-def test_chrFormat_str():
+def test_chr_type_format_str():
     # GIVEN a string, not representing an integer, i.e. 'chr3'
     # THEN chrFormat returns 'str'
-    assert chrFormat('chr4') == 'str'
+    assert chr_type_format('chr4') == 'str'
 
 
-def test_makeDict():
+def test_make_dict():
     # GIVEN a list where each element is on format: '<char>=<int>'
     test_list = ['a=1', 'b=2', 'c=3']
     # THEN the list is transformed to a key/value dict, <char>:<int>
     test_dict = {'a':'1', 'b':'2', 'c':'3'}
     #
-    assert test_dict == makeDict(test_list)
+    assert test_dict == make_dict(test_list)
 
 
 def test_png_filename():
     # GIVEN filename "test.file" and label "myLabel"
     # THEN png_filename() will return "test_myLabel.png"
-    assert "test_myLabel.png" == png_filename("test.file", "myLabel")
+    assert png_filename("test.file", "myLabel") == "test_myLabel.png"
 
 
 def test_outpath(tmpdir):
@@ -47,14 +44,14 @@ def test_outpath(tmpdir):
 
 def test_cast():
     # GIVEN a dict, simulated to parsing a Wig-file header
-    wigHeader = {'chrom': '1', 'start': '1', 'step': '10000\n'}
+    wig_header = {'chrom': '1', 'start': '1', 'step': '10000\n'}
     # THEN calling `cast` parsed values are typecast to internally used types
-    assert cast(wigHeader) == {'chrom': 'int', 'start': 1, 'step': 10000}
+    assert cast(wig_header) == {'chrom': 'int', 'start': 1, 'step': 10000}
 
 
 def test_filter_dataframe():
     # GIVEN a small dataframe
-    test_frame = pd.DataFrame({'chrom':['chr1', 'chrERR'], 'coverage':[1,2], 'pos':[1,2]})
+    test_frame = pd.DataFrame({'chrom':['chr1', 'chrERR'], 'coverage':[1, 2], 'pos':[1, 2]})
     # THEN entries not matching filter is removed
     clean_frame = pd.DataFrame({'chrom':['chr1'], 'coverage':[1], 'pos':[1]})
     filtered_frame = filter_dataframe(test_frame, ['chr1'])

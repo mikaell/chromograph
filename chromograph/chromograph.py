@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Plot chromosoms and misc variants. Can be invoked from commandline
 or from imported.
@@ -10,38 +8,37 @@ Further info:
   https://matplotlib.org/3.1.1/api/collections_api.html#matplotlib.collections.BrokenBarHCollection
 
 
-Project on Github: 
+Project on Github:
 
     https://github.com/mikaell/chromograph
 
 """
+import os
+import re
+import sys
+from argparse import ArgumentParser
+import pandas
+import matplotlib
+from matplotlib import pyplot as plt
+from matplotlib.collections import BrokenBarHCollection
+from chromograph import __version__
+from .chr_utils import (read_cfg, filter_dataframe,
+                        outpath, parse_wig_declaration,
+                        parse_upd_regions)
+
+matplotlib.use('Agg')
 
 # TODO: instead of padding look-ahead and contsrict if overlap
 # TODO: combined ROH image
 
-from chromograph import __version__
-
-import os
-from argparse import ArgumentParser
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-from matplotlib.collections import BrokenBarHCollection
-import numpy as np
-import pandas
-import re
-import sys
-from .chr_utils import (read_cfg, filter_dataframe, png_filename,
-                        outpath, parse_wig_declaration,
-                        parse_upd_regions)
 
 PADDING = 200000
 COVERAGE_END = 249255000        # write all coverage files to the same size canvas
 HEIGHT = 1
 YBASE = 0
 SPACE = 1
-FIGSIZE = (6,8)
-FIGSIZE_SINGLE = (8,8)
+FIGSIZE = (6, 8)
+FIGSIZE_SINGLE = (8, 8)
 UPD_FORMAT = ['chrom', 'start', 'end', 'updType']
 IDEOGRAM_FORMAT = ['chrom', 'start', 'end', 'name', 'gStain']
 WIG_FORMAT = ['chrom', 'coverage', 'pos']
@@ -79,7 +76,7 @@ def assure_dir(outd):
     if not os.path.exists(outd):
         os.makedirs(outd)
 
-def bed_collections_generatorCombine(df, y_positions, height,  **kwargs):
+def bed_collections_generator_combine(df, y_positions, height, **kwargs):
     """ Iterate dataframe
 
         Args:
@@ -96,7 +93,7 @@ def bed_collections_generatorCombine(df, y_positions, height,  **kwargs):
         yield BrokenBarHCollection(xranges,
                                    yrange,
                                    facecolors=group['colors'],
-                                   label = chrom)
+                                   label=chrom)
 
 
 def bed_collections_generator(df, y_positions, height):
@@ -108,7 +105,7 @@ def bed_collections_generator(df, y_positions, height):
         yrange = (0, height)
         xranges = group[['start', 'width']].values
         yield BrokenBarHCollection(
-            xranges, yrange, facecolors=group['colors'], label =chrom)
+            xranges, yrange, facecolors=group['colors'], label=chrom)
 
 
 def coverage_generator(df, data_state):
@@ -124,7 +121,7 @@ def coverage_generator(df, data_state):
     for chrom, group in df.groupby('chrom'):
         c = {'label': chrom,
              'x': group['pos'].values,
-             'y': group[data_state].values }
+             'y': group[data_state].values}
         yield c
 
 
@@ -144,7 +141,7 @@ def coverage_generatorCombine(df, y_positions, height):
         yrange = (0, height)
         xranges = group[['start', 'width']].values
         yield BrokenBarHCollection(
-            xranges, yrange, facecolors=group['colors'], label =chrom)
+            xranges, yrange, facecolors=group['colors'], label=chrom)
 
 
 def common_settings(ax):
@@ -163,9 +160,9 @@ def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
         ax.add_collection(collection)
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
-        outfile = outpath(outd, infile, collection.get_label() )
+        outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
+        fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
 
 
@@ -173,7 +170,7 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     """Print all chromosomes in a single PNG picture"""
     fig = plt.figure(figsize=FIGSIZE)
     ax = fig.add_subplot(111)
-    for c in bed_collections_generatorCombine(df, chrom_ybase, HEIGHT):
+    for c in bed_collections_generator_combine(df, chrom_ybase, HEIGHT):
         ax.add_collection(c)
 
     ax.set_yticks([chrom_centers[i] for i in chr_list])
@@ -181,15 +178,15 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     ax.axis('tight')
     outfile = outpath(outd, infile, 'combined')
     print("outfile: {}".format(outfile))
-    fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
+    fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
 
 
 def bed_to_dataframe(file, spec):
     """Read a bed file into a Pandas dataframe according to 'spec' """
-    return pandas.read_csv(file, names=spec, sep ='\t', skiprows=1)
+    return pandas.read_csv(file, names=spec, sep='\t', skiprows=1)
 
 
-def wig_to_dataframe(infile, step, format):
+def wig_to_dataframe(infile, step, col_format):
     """Read a wig file into a Pandas dataframe
 
     infile(str): Path to file
@@ -212,16 +209,16 @@ def wig_to_dataframe(infile, step, format):
             reresult = re.search("chrom=(\w*)", line) # find chromosome name in line
             if reresult:
                 print(line)
-                start_pos = [chr, 0, 1] # write 0 in beginning, works against bug 
+                start_pos = [chr, 0, 1] # write 0 in beginning, works against bug
                 stop_pos = [chr, 0, pos + 1] # write 0 at end removes linear slope
                 last_pos = [chr, 0, COVERAGE_END] # writen in every set to give same scale when plotting
 #                coverage_data.insert(start_pos)
                 coverage_data.append(stop_pos)
                 coverage_data.append(last_pos)
                 chr = reresult.group(1) # start working on next chromosome
-                pos =0
+                pos = 0
     fs.close()
-    df = pandas.DataFrame(coverage_data, columns= format)
+    df = pandas.DataFrame(coverage_data, columns=col_format)
     return df
 
 
@@ -275,10 +272,10 @@ def plot_ideogram(file, *args, **kwargs):
         chromosome_list = cfg[setting]
         df = bed_to_dataframe(file, IDEOGRAM_FORMAT)
         # delete chromosomes not in CHROMOSOME_LIST
-        df = filter_dataframe(df, chromosome_list) 
-        if (df.size > 0):
+        df = filter_dataframe(df, chromosome_list)
+        if df.size > 0:
             break
-    if (df.size == 0):
+    if df.size == 0:
         raise Exception('Ideogram parsing')
     df['width'] = df.end - df.start
     df['colors'] = df['gStain'].apply(lambda x: get_color[x])
@@ -356,7 +353,7 @@ def plot_wig(file, *args, **kwargs):
     if 'norm' in args:
         normalize = True
     if 'rgb' in kwargs and kwargs['rgb'] is not None:
-        color = toRGB(kwargs['rgb'])
+        color = rgb_str(kwargs['rgb'])
     if 'outd' in kwargs and kwargs['outd'] is not None:
         print("outd?")
         outd = kwargs['outd']
@@ -366,27 +363,28 @@ def plot_wig(file, *args, **kwargs):
     print("Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}"
           .format(fixedStep, outd, combine, normalize))
 
-    chromosome_list = listType(decl['chrom'], cfg)
+    chromosome_list = list_type(decl['chrom'], cfg)
     df = wig_to_dataframe(file, fixedStep, WIG_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
-    df['normalized_coverage']=(df.coverage /df.coverage.mean()).round(0)
+    df['normalized_coverage'] = (df.coverage /df.coverage.mean()).round(0)
     print_wig(df, file, outd, combine, normalize, color)
 
 
 def print_wig(df, file, outd, combine, normalize, color):
+    """Print wig graph as PNG file"""
     data_state = 'normalized_coverage' if normalize else 'coverage'
     if not combine:           # Plot one chromosome per png
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
             common_settings(ax)
             ax.stackplot(c['x'], c['y'], colors=color)
-            plt.ylim(0,5)
+            plt.ylim(0, 5)
             ax.set_ylim(bottom=0)
             ax.set_xlim((0, 255359341))      # try to mimic nice bounds
             fig.tight_layout()
-            outfile = outpath(outd, file, c['label'] )
+            outfile = outpath(outd, file, c['label'])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
+            fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
             plt.close(fig)                   # save memory
     else:
         # TODO:
@@ -395,7 +393,7 @@ def print_wig(df, file, outd, combine, normalize, color):
 
 
 def plot_regions(file, *args, **kwargs):
-    """  """
+    """  Print region as PNG file"""
 
     # Parse sites upd file to brokenbarcollection
     l = []
@@ -407,7 +405,7 @@ def plot_regions(file, *args, **kwargs):
     with open(file) as fp:
         for line in fp:
             l.append(parse_upd_regions(line))
-    bb = [sitesBrokenBar(i) for i in l]
+    bb = [sites_to_brokenbar(i) for i in l]
 
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, .5))
@@ -416,34 +414,37 @@ def plot_regions(file, *args, **kwargs):
         ax.add_collection(collection)
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
-        outfile = outpath(outd, file, collection.get_label() )
+        outfile = outpath(outd, file, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent = False, bbox_inches='tight', pad_inches=0)
+        fig.savefig(outfile, transparent=False, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
 
 
-def sitesBrokenBar(region):
+def sites_to_brokenbar(region):
     """ Make a MathPlotLIb 'BrokenbarCollection' from upd sites data"""
     start = int(region['start'])
     width = int(region['stop']) - int(region['start'])
-    color = get_color[ region['desc']['origin'] ]
+    color = get_color[region['desc']['origin']]
     xranges = [[start, width]]
     yrange = (0, 1)
     return BrokenBarHCollection(xranges,
                                 yrange,
-                                facecolors= color,
-                                label = region['chr'])
+                                facecolors=color,
+                                label=region['chr'])
 
 
-def toRGB(color):
-    x, *xs = str(color)
-    if x is '#':
+def rgb_str(color):
+    """Return #color"""
+    head, *tail = str(color)
+    if head == '#':
         return color            # color was alread on format "#123456"
     else:
         return '#'+ str(color)
 
 
-def listType(chr_type, cfg):
+def list_type(chr_type, cfg):
+    """ Determine type annd return list of possible
+    field names in parsed data frame"""
     if chr_type == 'int':
         return cfg['chromosome_int']
     else:
@@ -451,6 +452,9 @@ def listType(chr_type, cfg):
 
 
 def main():
+    """Main function for Chromograph
+
+    Parse incoming args and call correct function"""
     parser = ArgumentParser()
     parser.add_argument("-u", "--upd", dest="updfile",
                         help="input UPD sites file on format {}".format(UPD_FORMAT),
@@ -485,18 +489,18 @@ def main():
 
 
     # Make command line and library interfaces behave identical regarding args
-    args.norm = 'norm' if args.norm == True else None
-    args.combine = 'combine' if args.combine == True else None
-    
+    args.norm = 'norm' if args.norm else None
+    args.combine = 'combine' if args.combine else None
+
     if args.ideofile:
-        plot_ideogram(args.ideofile, args.combine, outd = args.outd)
+        plot_ideogram(args.ideofile, args.combine, outd=args.outd)
     if args.updfile:
-        plot_upd(args.updfile, args.combine, outd = args.outd, step=args.step)
+        plot_upd(args.updfile, args.combine, outd=args.outd, step=args.step)
     if args.wigfile:
-        plot_wig(args.wigfile, args.combine, args.norm, outd = args.outd, step=args.step, rgb=args.rgb)
+        plot_wig(args.wigfile, args.combine, args.norm, outd=args.outd, step=args.step, rgb=args.rgb)
     if args.regionsfile:
-        plot_regions(args.regionsfile, outd = args.outd)
-    if len(sys.argv[1:])==0:
+        plot_regions(args.regionsfile, outd=args.outd)
+    if len(sys.argv[1:]) == 0:
         parser.print_help()
         # parser.print_usage() # for just the usage line
         parser.exit()
