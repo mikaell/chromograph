@@ -76,7 +76,7 @@ def assure_dir(outd):
     if not os.path.exists(outd):
         os.makedirs(outd)
 
-def bed_collections_generator_combine(df, y_positions, height, **kwargs):
+def bed_collections_generator_combine(df, y_positions, height):
     """ Iterate dataframe
 
         Args:
@@ -96,7 +96,7 @@ def bed_collections_generator_combine(df, y_positions, height, **kwargs):
                                    label=chrom)
 
 
-def bed_collections_generator(df, y_positions, height):
+def bed_collections_generator(df, height):
     """ Interate dataframe
     Yeilds:
     Brokenbarhcollection --from BED DF to be plotted
@@ -125,13 +125,12 @@ def coverage_generator(df, data_state):
         yield c
 
 
-def coverage_generatorCombine(df, y_positions, height):
+def coverage_generator_combine(df, height):
     """Iterate dataframe and yeild per chromosome, like coverage_generator()
     -with additional positional
 
     Args:
         df --
-        y_positions --
         height ---
 
     Yeilds:
@@ -151,12 +150,12 @@ def common_settings(ax):
     ax.set_axis_off()    # Remove black line surrounding pic.
 
 
-def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
+def print_individual_pics(df, infile, outd):
     """Print one chromosomes per image file"""
     fig = plt.figure(figsize=(10, .5))
     ax = fig.add_subplot(111)
     plt.rcParams.update({'figure.max_open_warning': 0})
-    for collection in bed_collections_generator(df, chrom_ybase, HEIGHT):
+    for collection in bed_collections_generator(df, HEIGHT):
         ax.add_collection(collection)
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
@@ -198,24 +197,24 @@ def wig_to_dataframe(infile, step, col_format):
     fs = open(infile, 'r')
     coverage_data = []
     pos = 0
-    chr = ""
+    chrom = ""
     for line in fs.readlines():
         try:
             f = float(line)
             f = f if f < WIG_MAX else WIG_MAX
-            coverage_data.append([chr, f, pos])
+            coverage_data.append([chrom, f, pos])
             pos += step
         except ValueError:
             reresult = re.search("chrom=(\w*)", line) # find chromosome name in line
             if reresult:
                 print(line)
-                start_pos = [chr, 0, 1] # write 0 in beginning, works against bug
-                stop_pos = [chr, 0, pos + 1] # write 0 at end removes linear slope
-                last_pos = [chr, 0, COVERAGE_END] # writen in every set to give same scale when plotting
-#                coverage_data.insert(start_pos)
+                start_pos = [chrom, 0, 1] # write 0 in beginning, works against bug
+                stop_pos = [chrom, 0, pos + 1] # write 0 at end removes linear slope
+                last_pos = [chrom, 0, COVERAGE_END] # write trailing char for scale when plotting
+#               coverage_data.insert(start_pos)
                 coverage_data.append(stop_pos)
                 coverage_data.append(last_pos)
-                chr = reresult.group(1) # start working on next chromosome
+                chrom = reresult.group(1) # start working on next chromosome
                 pos = 0
     fs.close()
     df = pandas.DataFrame(coverage_data, columns=col_format)
@@ -283,7 +282,7 @@ def plot_ideogram(file, *args, **kwargs):
     if combine:
         print_combined_pic(df, chrom_ybase, chrom_centers, file, outd, chromosome_list)
     else:
-        print_individual_pics(df, chrom_ybase, chrom_centers, file, outd)
+        print_individual_pics(df, file, outd)
 
 
 def plot_upd(file, *args, **kwargs):
