@@ -28,40 +28,17 @@ def test_makeDict():
     assert d == makeDict(s)
 
 
-
 def test_png_filename():
     # GIVEN filename "test.file" and label "myLabel"
     # THEN png_filename() will return "test_myLabel.png"
     assert "test_myLabel.png" == png_filename("test.file", "myLabel")
 
     
-    # TISDAG: skriv klart kommentarer
 def test_outpath(tmpdir):
     # WHEN setting up temporary directory and a file
     outd = tmpdir.mkdir("directory")
     infile = "file.test"
-    # GIVEN
+    # GIVEN simulated result, on format `path/to/directory/file_LABEL.png`
     d = os.path.join(outd, "file_LABEL.png")
-    # THEN outpath
+    # THEN outpath will match
     assert d == outpath(outd, infile, "LABEL")
-    
-
-
-
-# /private/var/folders/vc/5c_gq8jj3r5fgmwq7r5k8xk00000gp/T/pytest-of-Mikael/pytest-13/test_outpath0/testOPinfile_tester.png
-
-
-    
-# def test_read_ini(tmpdir):
-#     print(tmpdir)      # /private/var/folders/ry/z60xxmw0000gn/T/pytest-of-gabor/pytest-14/test_read0
-#     d = tmpdir.mkdir("subdir")
-#     fh = d.join("config.ini")
-#     fh.write("""
-# [application]
-# user  =  foo
-# password = secret  
-# """)
- 
-#     print(fh.basename) # data.txt
-#     print(fh.dirname)  # /private/var/folders/ry/z60xxmw0000gn/T/pytest-of-gabor/pytest-14/test_read0/subdir
-#     filename = os.path.join( fh.dirname, fh.basename )
