@@ -22,7 +22,6 @@ def read_cfg():
         'wig_step': 5000}
 
 
-
 def filter_dataframe(frame, list_of_chromosomes):
     """Delete chromosome names not read into 'frame'
 
@@ -33,13 +32,10 @@ def filter_dataframe(frame, list_of_chromosomes):
     return frame[frame.chrom.apply(lambda x: x in list_of_chromosomes)]
 
 
-
-
 def png_filename(infile, label):
     """Return filename with 'label' and suffix 'png'"""
     (filename, _ending) = os.path.splitext(infile)
     return filename + "_" + label + ".png"
-
 
 
 def outpath(outd, infile, label):
@@ -79,7 +75,7 @@ def cast(decl):
 def chrFormat(chr):
     """If chromosome declaration is
     'chr1' return 'str'
-    '1' retirn 'int'
+    '1' return 'int'
     """
     try:
         int(chr)
@@ -91,6 +87,9 @@ def chrFormat(chr):
 def parse_updRegions(line, separator):
     """Parse sites upt file bed file"""
     [chr, start, stop, desc] = line.split()
+    # TODO: fix bug when line ends with ws
+    # For example getting: ['chrom=17', 'start=1', 'step=5000', '\n']
+    #
     return {'chr': chr, 'start': start, 'stop': stop, 'desc': makeDict(desc.split(';'))}
 
 
@@ -104,5 +103,3 @@ def makeDict(kv_list):
         k,v = i.split("=")
         d[k.lower()] = v
     return d
-
-
