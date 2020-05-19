@@ -41,6 +41,7 @@ UPD_FORMAT = ['chrom', 'start', 'end', 'updType']
 IDEOGRAM_FORMAT = ['chrom', 'start', 'end', 'name', 'gStain']
 WIG_FORMAT = ['chrom', 'coverage', 'pos']
 WIG_ORANGE = "#e89f00"
+WIG_MAX = 70.0
 
 
 get_color = {
@@ -197,13 +198,17 @@ def wig_to_dataframe(infile, step, format):
     for line in fs.readlines():
         try:
             f = float(line)
+            f = f if f < WIG_MAX else WIG_MAX
             coverage_data.append([chr, f, pos])
             pos += step
         except ValueError:
             reresult = re.search("chrom=(\w*)", line) # find chromosome name in line
             if reresult:
-                stop_pos = [chr, 0, pos + 5000] # write 0 at end removes linear slope
+                print(line)
+                start_pos = [chr, 0, 1] # write 0 in beginning, works against bug 
+                stop_pos = [chr, 0, pos + 1] # write 0 at end removes linear slope
                 last_pos = [chr, 0, COVERAGE_END] # writen in every set to give same scale when plotting
+#                coverage_data.insert(start_pos)
                 coverage_data.append(stop_pos)
                 coverage_data.append(last_pos)
                 chr = reresult.group(1) # start working on next chromosome
