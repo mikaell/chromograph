@@ -362,7 +362,11 @@ def plot_wig(file, *args, **kwargs):
     chromosome_list = listType(decl['chrom'], cfg)
     df = wig_to_dataframe(file, fixedStep, WIG_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
-    df['normalized_coverage']=(df.coverage /df.coverage.mean()).round(0)
+    # mean = df.coverage.mean()
+    mean = 13.5438
+    print("mean: {}".format(mean))
+    df['normalized_coverage']=(df.coverage /mean).round(0)
+    print(df.head(3))
     print_wig(df, file, outd, combine, normalize, color)
 
 
