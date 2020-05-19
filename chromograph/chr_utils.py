@@ -1,4 +1,5 @@
 import os
+import path
 import yaml
 import pkg_resources
 
@@ -44,8 +45,7 @@ def png_filename(infile, label):
 def outpath(outd, infile, label):
     f = os.path.basename(infile)    # strip path from filename
     outfile = png_filename(f, label)
-    outpath = outd + "/" + outfile
-    print("outfile: {}".format(outpath))
+    outpath = os.path.join(outd, outfile)
     return outpath
 
 
