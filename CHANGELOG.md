@@ -2,10 +2,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x]
+## [0.1.3]
 
 ### Added
 - Support for second guessing ideogram bed file chromosome format (i.e. 1 or chr1)
+- Test file `test_chr_utils.py`
+
+### Fixed
+- Bug: Sloping graphs
+- Bug: use `os.path` instead of concatenating string
 
 ## [0.1.2]
 
