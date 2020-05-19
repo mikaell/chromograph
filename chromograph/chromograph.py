@@ -159,6 +159,7 @@ def print_individual_pics(df, chrom_ybase, chrom_centers, infile, outd):
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
         outfile = outpath(outd, infile, collection.get_label() )
+        print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
 
@@ -174,6 +175,7 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     ax.set_yticklabels(chr_list)
     ax.axis('tight')
     outfile = outpath(outd, infile, 'combined')
+    print("outfile: {}".format(outfile))
     fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
 
 
@@ -374,11 +376,11 @@ def print_wig(df, file, outd, combine, normalize, color):
             common_settings(ax)
             ax.stackplot(c['x'], c['y'], colors=color)
             plt.ylim(0,5)
-            
             ax.set_ylim(bottom=0)
             ax.set_xlim((0, 255359341))      # try to mimic nice bounds
             fig.tight_layout()
             outfile = outpath(outd, file, c['label'] )
+            print("outfile: {}".format(outfile))
             fig.savefig(outfile, transparent = True, bbox_inches='tight', pad_inches=0)
             plt.close(fig)                   # save memory
     else:
@@ -410,6 +412,7 @@ def plot_regions(file, *args, **kwargs):
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
         outfile = outpath(outd, file, collection.get_label() )
+        print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent = False, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
 
