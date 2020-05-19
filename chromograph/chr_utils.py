@@ -23,7 +23,8 @@ def read_cfg():
 
 
 def filter_dataframe(frame, list_of_chromosomes):
-    """Delete chromosome names not read into 'frame'
+    """Delete dataframe entries where 'chrome' does not appear in the 
+    list `list_of_chromosomes`
 
         Args:
             frame(dataframe)
@@ -60,12 +61,14 @@ def parseWigDeclarationLine(wigfile, separator):
         x, *xs = line.split(separator)
         if x == 'fixedStep' and 'chrM' not in xs[0]:
             declaration = makeDict(xs)   # split xs on '=' to get a dict
+            print(declaration)
             return cast(declaration)
         i+=1
     raise Warning('declarationNotFound')
 
 
 def cast(decl):
+    """ Cast dict's values from string to internally used types """
     decl['start'] = int(decl['start'])
     decl['step'] = int(decl['step'])
     decl['chrom'] = chrFormat(decl['chrom'])

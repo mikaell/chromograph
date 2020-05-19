@@ -2,6 +2,7 @@
 #
 #
 import os
+import pandas as pd
 
 from chromograph.chr_utils import (chrFormat, cast, read_cfg, filter_dataframe,
                                    png_filename, outpath, parseWigDeclarationLine,
@@ -49,3 +50,13 @@ def test_cast():
     wigHeader = {'chrom': '1', 'start': '1', 'step': '10000\n'}
     # THEN calling `cast` parsed values are typecast to internally used types
     assert cast(wigHeader) == {'chrom': 'int', 'start': 1, 'step': 10000}
+
+
+def test_filter_dataframe():
+    # GIVEN a small dataframe
+    test_frame = pd.DataFrame({'chrom':['chr1', 'chrERR'], 'coverage':[1,2], 'pos':[1,2]})
+    # THEN entries not matching filter is removed
+    clean_frame = pd.DataFrame({'chrom':['chr1'], 'coverage':[1], 'pos':[1]})
+    filtered_frame = filter_dataframe(test_frame, ['chr1'])
+    # CAST frames to dicts to avoid disambigous series
+    assert filtered_frame.to_dict() == clean_frame.to_dict()
