@@ -5,8 +5,8 @@ import os
 import pandas as pd
 
 from chromograph.chr_utils import (chrFormat, cast, read_cfg, filter_dataframe,
-                                   png_filename, outpath, parseWigDeclarationLine,
-                                   makeDict)
+                                   png_filename, outpath, parse_wig_declaration,
+                                   make_dict)
 
 def test_chrFormat():
     # GIVEN a string integer, i.e. '1'

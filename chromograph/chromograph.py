@@ -9,6 +9,11 @@ or from imported.
 Further info:
   https://matplotlib.org/3.1.1/api/collections_api.html#matplotlib.collections.BrokenBarHCollection
 
+
+Project on Github: 
+
+    https://github.com/mikaell/chromograph
+
 """
 
 # TODO: instead of padding look-ahead and contsrict if overlap
@@ -27,8 +32,8 @@ import pandas
 import re
 import sys
 from .chr_utils import (read_cfg, filter_dataframe, png_filename,
-                        outpath, parseWigDeclarationLine,
-                        parse_updRegions)
+                        outpath, parse_wig_declaration,
+                        parse_upd_regions)
 
 PADDING = 200000
 COVERAGE_END = 249255000        # write all coverage files to the same size canvas
@@ -339,7 +344,7 @@ def plot_wig(file, *args, **kwargs):
 
     """
     cfg = read_cfg()
-    decl = parseWigDeclarationLine(file, ' ')
+    decl = parse_wig_declaration(file, ' ')
     outd = os.path.dirname(file)
     combine = False
     fixedStep = decl['step'] #cfg['wig_step']
@@ -401,7 +406,7 @@ def plot_regions(file, *args, **kwargs):
     print("Plot UPD REGIONS with settings \noutd:{}".format(outd))
     with open(file) as fp:
         for line in fp:
-            l.append(parse_updRegions(line, '\t'))
+            l.append(parse_upd_regions(line))
     bb = [sitesBrokenBar(i) for i in l]
 
     # Prepare canvas and plot
