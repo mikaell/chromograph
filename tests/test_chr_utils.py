@@ -1,9 +1,20 @@
 """Pytests for Chromograph """
 import os
+import unittest.mock as mock
+from unittest.mock import mock_open
 import pandas as pd
 from chromograph.chr_utils import (chr_type_format, cast, read_cfg, filter_dataframe,
                                    png_filename, outpath, parse_wig_declaration,
                                    make_dict)
+
+
+
+WIG_HEAD="""123
+312312
+12321
+
+fixedStep chrom=1 start=1 step=10000"""
+
 
 def test_chr_type_format():
     # GIVEN a string integer, i.e. '1'
@@ -52,8 +63,20 @@ def test_cast():
 def test_filter_dataframe():
     # GIVEN a small dataframe
     test_frame = pd.DataFrame({'chrom':['chr1', 'chrERR'], 'coverage':[1, 2], 'pos':[1, 2]})
-    # THEN entries not matching filter is removed
+    # THEN entries not matching the filter are removed
     clean_frame = pd.DataFrame({'chrom':['chr1'], 'coverage':[1], 'pos':[1]})
     filtered_frame = filter_dataframe(test_frame, ['chr1'])
     # CAST frames to dicts to avoid disambigous series
     assert filtered_frame.to_dict() == clean_frame.to_dict()
+
+
+@mock.patch('builtins.open', new_callable=mock_open, read_data=WIG_HEAD)
+def test_parse_wig_declaration(mock_file):
+    # GIVEN a mockup wig file with fixed steps, nonsense lines and fixedStep line
+
+    # THEN chrom, start and step are parsed to a dict
+    assert {'chrom': 'int', 'start': 1, 'step': 10000} == parse_wig_declaration('filename', ' ')
+
+
+# TODO: add test to catch warning('declarationNotFound') when declaration
+# is missing, test_parse_wig_declaration_warn()
