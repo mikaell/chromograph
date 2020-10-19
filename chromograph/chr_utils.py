@@ -1,3 +1,4 @@
+
 """CHR_UTILS
 
 A collection of auxillary functions for Chromograph
@@ -63,7 +64,7 @@ def parse_wig_declaration(wigfile, separator):
     while i < max_iterations:
         line = fp.readline()
         x, *xs = line.split(separator)
-        if x == 'fixedStep' and 'chrM' not in xs[0]:
+        if x.lower() == 'fixedstep' and 'chrM' not in xs[0]:
             declaration = make_dict(xs)   # split xs on '=' to get a dict
             print(declaration)
             return cast(declaration)
