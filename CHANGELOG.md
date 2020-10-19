@@ -4,6 +4,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [x.x.x]
 ### Added
+
+### Fixed
+
+
+## [0.2.0]
+### Added
+- Option `--euploid`
 - More Pytest tests
 
 ### Fixed
