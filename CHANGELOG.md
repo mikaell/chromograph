@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Fixed
-
+- When using `euploid` flag written empty png:s did not match correct genome prefix (37 vs 38)
 
 ## [0.2.0]
 ### Added
