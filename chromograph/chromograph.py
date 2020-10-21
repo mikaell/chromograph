@@ -24,7 +24,8 @@ from matplotlib.collections import BrokenBarHCollection
 from chromograph import __version__
 from .chr_utils import (read_cfg, filter_dataframe,
                         outpath, parse_wig_declaration,
-                        parse_upd_regions)
+                        parse_upd_regions,
+                        chr_type_format)
 
 matplotlib.use('Agg')
 
@@ -45,10 +46,10 @@ WIG_FORMAT = ['chrom', 'coverage', 'pos']
 WIG_ORANGE = "#e89f00"
 WIG_MAX = 70.0
 PNG_BYTES=b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82'
-CHROMOSOMES=['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7',
-             'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13',
-             'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19',
-             'chr20', 'chr21', 'chr22', 'chrM', 'chrX', 'chrY']
+CHROMOSOMES=['1', '2', '3', '4', '5', '6', '7',
+             '8', '9', '10', '11', '12', '13',
+             '14', '15', '16', '17', '18', '19',
+             '20', '21', '22', 'M', 'X', 'Y']
 
 
 
@@ -161,9 +162,8 @@ def print_individual_pics(df, infile, outd, euploid):
     fig = plt.figure(figsize=(10, .5))
     ax = fig.add_subplot(111)
     plt.rcParams.update({'figure.max_open_warning': 0})
-    if euploid:
-        print_empty_pngs(file, outd)
 
+    is_printed = []
     for collection in bed_collections_generator(df, HEIGHT):
         ax.add_collection(collection)
         common_settings(ax)
@@ -172,6 +172,9 @@ def print_individual_pics(df, infile, outd, euploid):
         print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
+        is_printed.append(label)
+    if euploid:
+        print_empty_pngs(infile, outd, is_printed)
 
 
 def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
@@ -189,12 +192,21 @@ def print_combined_pic(df, chrom_ybase, chrom_centers, infile, outd, chr_list):
     fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
 
 
-def print_empty_pngs(file, outd):
-    """Write an empty png file to disk for every chromosome, always including Y.
+def print_empty_pngs(file, outd, is_printed):
+    """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
+    format = chr_type_format(is_printed[0])
+
     for chr in CHROMOSOMES:
-        outfile = outpath(outd, file, chr)
+        if chr in is_printed:
+            continue
+        if 'chr'+chr in is_printed:
+            continue
+
+        prefix = "chr" if format == "str" else ""
+        outfile = outpath(outd, file, prefix+chr)
+        print("print empty: {}".format(outfile))
         f = open(outfile, "bw")
         f.write(PNG_BYTES)
         f.close()
@@ -397,8 +409,7 @@ def print_wig(df, file, outd, combine, normalize, color, euploid):
     """Print wig graph as PNG file"""
     data_state = 'normalized_coverage' if normalize else 'coverage'
     if not combine:           # Plot one chromosome per png
-        if euploid:
-            print_empty_pngs(file, outd)
+        is_printed = []
         for c in coverage_generator(df, data_state):
             fig, ax = plt.subplots(figsize=(8, .7))
             common_settings(ax)
@@ -411,6 +422,8 @@ def print_wig(df, file, outd, combine, normalize, color, euploid):
             print("outfile: {}".format(outfile))
             fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
             plt.close(fig)                   # save memory
+        if euploid:
+            print_empty_pngs(file, outd, is_printed)
     else:
         # TODO:
         print("WARNING: Combined WIG png not implemented!")
@@ -435,20 +448,25 @@ def plot_regions(file, *args, **kwargs):
             l.append(parse_upd_regions(line))
     bb = [sites_to_brokenbar(i) for i in l]
 
-    if euploid:
-        print_empty_pngs(file, outd)
 
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, .5))
     ax = fig.add_subplot(111)
+    is_printed = []
     for collection in bb:
         ax.add_collection(collection)
         common_settings(ax)
         ax.set_xlim((-12159968, 255359341))      # try to mimic nice bounds
         outfile = outpath(outd, file, collection.get_label())
-        print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent=False, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
+        is_printed.append(collection.get_label())
+
+    # print each name only once
+    for name in dict.fromkeys(is_printed):
+        print("outfile: {}".format(outpath(outd, file, name)))
+    if euploid:
+        print_empty_pngs(file, outd, is_printed)
 
 
 def sites_to_brokenbar(region):
