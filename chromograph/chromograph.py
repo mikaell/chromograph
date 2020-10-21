@@ -172,7 +172,7 @@ def print_individual_pics(df, infile, outd, euploid):
         print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
         ax.cla()             # clear canvas before next iteration
-        is_printed.append(label)
+        is_printed.append(collection.get_label())
     if euploid:
         print_empty_pngs(infile, outd, is_printed)
 
@@ -421,6 +421,7 @@ def print_wig(df, file, outd, combine, normalize, color, euploid):
             outfile = outpath(outd, file, c['label'])
             print("outfile: {}".format(outfile))
             fig.savefig(outfile, transparent=True, bbox_inches='tight', pad_inches=0)
+            is_printed.append(c['label'])
             plt.close(fig)                   # save memory
         if euploid:
             print_empty_pngs(file, outd, is_printed)
@@ -492,7 +493,7 @@ def rgb_str(color):
 
 
 def list_type(chr_type, cfg):
-    """ Determine type annd return list of possible
+    """ Determine type and return list of possible
     field names in parsed data frame"""
     if chr_type == 'int':
         return cfg['chromosome_int']
