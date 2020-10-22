@@ -51,7 +51,11 @@ CHROMOSOMES=['1', '2', '3', '4', '5', '6', '7',
              '14', '15', '16', '17', '18', '19',
              '20', '21', '22', 'M', 'X', 'Y']
 
-
+DEFAULT_SETTING = {
+    "combine": False,
+    "normalize": False,
+    "euploid": False
+}
 
 get_color = {
     # Cytoband colors
@@ -287,14 +291,7 @@ def plot_ideogram(file, *args, **kwargs):
           None
     """
     cfg = read_cfg()
-    outd = os.path.dirname(file)
-    combine = False
-    if 'combine' in args:
-        combine = True
-    if 'outd' in kwargs and kwargs['outd'] is not None:
-        outd = kwargs['outd']
-        assure_dir(outd)
-
+    settings = normalize_args(args, kwargs)
     print("Plot ideograms with settings\ncombine:{}\noutd:{}".format(combine, outd))
 
     # try two different chromosome formats, if both result in
@@ -312,12 +309,12 @@ def plot_ideogram(file, *args, **kwargs):
     df['colors'] = df['gStain'].apply(lambda x: get_color[x])
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
     if combine:
-        print_combined_pic(df, chrom_ybase, chrom_centers, file, outd, chromosome_list)
+        print_combined_pic(df, chrom_ybase, chrom_centers, file, settings["outd"], chromosome_list)
     else:
-        print_individual_pics(df, file, outd, euploid)
+        print_individual_pics(df, file, settings["outd"], settings["euploid"])
 
 
-def plot_upd(file, *args, **kwargs):
+def plot_upd_sites(filepath, *args, **kwargs):
     """Visualize UPD data from bed-file. Bed format as:
 
         Chromosome <tab> Start <tab> End <tab> Upd-type
@@ -326,7 +323,7 @@ def plot_upd(file, *args, **kwargs):
     [https://github.com/bjhall/upd]
 
     Args:
-        file<str> -- input file on wig format
+        filepath<str> -- input file on wig format
 
     Optional Args:
         combine -- output all graphs in one png
@@ -336,17 +333,10 @@ def plot_upd(file, *args, **kwargs):
 
     """
     cfg = read_cfg()
-    outd = os.path.dirname(file)
-    combine = False
-    euploid = False
-    if 'combine' in args:
-        combine = True
-    if 'outd' in kwargs and kwargs['outd'] is not None:
-        outd = kwargs['outd']
-        assure_dir(outd)
-
-    print("Plot UPD with settings\ncombine:{}\neuploid:{}".format(combine, euploid))
-    df = bed_to_dataframe(file, UPD_FORMAT)
+    settings = normalize_upd_sites_args(decl, filepath, args, kwargs)
+    
+    print("Plot UPD with settings\ncombine:{}\neuploid:{}".format(settings["combine"], settings["euploid"]))
+    df = bed_to_dataframe(settings["filepath"], UPD_FORMAT)
     df.chrom = df.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     chromosome_list = cfg['chromosome_int']
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -354,16 +344,16 @@ def plot_upd(file, *args, **kwargs):
     df['colors'] = df['updType'].apply(lambda x: get_color[x])
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
     if combine:
-        print_combined_pic(df, chrom_ybase, chrom_centers, file, outd, chromosome_list)
+        print_combined_pic(df, chrom_ybase, chrom_centers, settings["filepath"], settings["outd"], chromosome_list)
     else:
-        print_individual_pics(df, file, outd, euploid)
+        print_individual_pics(df, settings["filepath"], settings["outd"], settings["euploid"])
 
 
-def plot_wig(file, *args, **kwargs):
+def plot_wig(filepath, *args, **kwargs):
     """Outputs png:s of data given on WIG format
 
     Args:
-        file(str)
+        filepath(str)
 
     Optional Args:
         combine -- output all graphs in one png
@@ -373,36 +363,20 @@ def plot_wig(file, *args, **kwargs):
 
     """
     cfg = read_cfg()
-    decl = parse_wig_declaration(file, ' ')
-    outd = os.path.dirname(file)
-    combine = False
-    fixedStep = decl['step'] #cfg['wig_step']
-    normalize = False
-    euploid = False
-    color = WIG_ORANGE          # set default color, override if rgb in kwargs
+    decl = parse_wig_declaration(filepath, ' ')
+    settings = normalize_wig_args(decl, filepath, args, kwargs)
 
-    if 'combine' in args:
-        combine = True
-    if 'norm' in args:
-        normalize = True
-    if 'euploid' in args:
-        euploid = True
-    if 'rgb' in kwargs and kwargs['rgb'] is not None:
-        color = rgb_str(kwargs['rgb'])
-    if 'outd' in kwargs and kwargs['outd'] is not None:
-        print("outd?")
-        outd = kwargs['outd']
-        assure_dir(outd)
-    if 'step' in kwargs and kwargs['step'] is not None:
-        fixedStep = kwargs['step']
     print("Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}\neuploid:{}"
-          .format(fixedStep, outd, combine, normalize, euploid))
+          .format(settings["fixedStep"], settings["outd"], settings["combine"], settings["normalize"], settings["euploid"]))
 
     chromosome_list = list_type(decl['chrom'], cfg)
-    df = wig_to_dataframe(file, fixedStep, WIG_FORMAT)
+    df = wig_to_dataframe(filepath, settings["fixedStep"], WIG_FORMAT)
     df = filter_dataframe(df, chromosome_list)   # delete chromosomes not in CHROMOSOME_LIST
     df['normalized_coverage'] = (df.coverage /df.coverage.mean()).round(0)
-    print_wig(df, file, outd, combine, normalize, color, euploid)
+    print_wig(df, filepath, settings["outd"], settings["combine"],
+              settings["normalize"],
+              settings["color"],
+              settings["euploid"])
 
 
 def print_wig(df, file, outd, combine, normalize, color, euploid):
@@ -431,24 +405,21 @@ def print_wig(df, file, outd, combine, normalize, color, euploid):
         False
 
 
-def plot_regions(file, *args, **kwargs):
+def plot_upd_regions(file, *args, **kwargs):
     """  Print region as PNG file"""
 
     # Parse sites upd file to brokenbarcollection
     l = []
-    outd = os.path.dirname(file)
-    euploid = False
-    if 'euploid' in args:
-        euploid = True
-    if 'outd' in kwargs and kwargs['outd'] is not None:
-        outd = kwargs['outd']
-        assure_dir(outd)
-    print("Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(outd, euploid))
+    settings = normalize_args(args, kwargs)
+
+    print("Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
+        settings["outd"],
+        settings["euploid"]))
     with open(file) as fp:
         for line in fp:
             l.append(parse_upd_regions(line))
+    # TODO: 'sites' in a function called 'plot_regions'
     bb = [sites_to_brokenbar(i) for i in l]
-
 
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, .5))
@@ -466,8 +437,8 @@ def plot_regions(file, *args, **kwargs):
     # print each name only once
     for name in dict.fromkeys(is_printed):
         print("outfile: {}".format(outpath(outd, file, name)))
-    if euploid:
-        print_empty_pngs(file, outd, is_printed)
+    if settings["euploid"]:
+        print_empty_pngs(file, settings["outd"], is_printed)
 
 
 def sites_to_brokenbar(region):
@@ -483,13 +454,47 @@ def sites_to_brokenbar(region):
                                 label=region['chr'])
 
 
+def normalize_wig_args(decl, filepath, args, kwargs):
+    setting = normalize_args(args, kwargs)
+    setting["color"] = WIG_ORANGE #set default color, override if rgb in kw
+    setting["fixedStep"] = decl['step'] #cfg['wig_step']
+    setting["outd"] = os.path.dirname(filepath)
+    if 'rgb' in kwargs and kwargs['rgb'] is not None:
+        setting["color"] = rgb_str(kwargs['rgb'])
+    if 'step' in kwargs and kwargs['step'] is not None:
+        setting["fixedStep"] = kwargs['step']
+    return setting
+
+
+def normalize_upd_sites_args(decl, filepath, args, kwargs):
+    setting = normalize_args(args, kwargs)
+    if 'combine' in args:
+        setting["combine"] = True
+    return setting
+
+
+def normalize_args(args, kwargs):
+    """Return a dict of args set to default if not given"""
+    settings = DEFAULT_SETTING
+    if 'combine' in args:
+        setting["combine"] = True
+    if 'norm' in args:
+        settings["normalize"] = True
+    if 'euploid' in args:
+        settings["euploid"] = True
+    if 'outd' in kwargs and kwargs['outd'] is not None:
+        print("output directory:{}".format(kwargs['outd']))
+        assure_dir(kwargs['outd'])
+        settings["outd"] = kwargs['outd']
+    return settings
+
+    
 def rgb_str(color):
     """Return #color"""
     head, *tail = str(color)
     if head == '#':
         return color            # color was alread on format "#123456"
-    else:
-        return '#'+ str(color)
+    return '#'+ str(color)
 
 
 def list_type(chr_type, cfg):
@@ -497,8 +502,7 @@ def list_type(chr_type, cfg):
     field names in parsed data frame"""
     if chr_type == 'int':
         return cfg['chromosome_int']
-    else:
-        return cfg['chromosome_str']
+    return cfg['chromosome_str']
 
 
 def main():
@@ -515,8 +519,11 @@ def main():
     parser.add_argument("-e", "--ideo", dest="ideofile",
                         help="input ideogram (bed-file) on format {}".format(IDEOGRAM_FORMAT),
                         metavar="FILE")
-    parser.add_argument("-w", "--coverage", dest="wigfile",
+    parser.add_argument("-w", "--coverage", dest="coverage_file",
                         help="input fixed step wig-file",
+                        metavar="FILE")
+    parser.add_argument("-h", "--roh", dest="roh",
+                        help="regions of homozygosity",
                         metavar="FILE")
     parser.add_argument("-o", "--outd", dest="outd",
                         help="output dir",
@@ -549,11 +556,13 @@ def main():
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)
     if args.updfile:
-        plot_upd(args.updfile, args.combine, args.euploid, outd=args.outd, step=args.step)
-    if args.wigfile:
-        plot_wig(args.wigfile, args.combine, args.norm, args.euploid, outd=args.outd, step=args.step, rgb=args.rgb)
+        plot_upd_sites(args.updfile, args.combine, args.euploid, outd=args.outd, step=args.step)
+    if args.roh:
+        plot_roh(args.updfile, args.combine, args.euploid, outd=args.outd, step=args.step)
+    if args.coverage_file:
+        plot_wig(args.coverage_file, args.combine, args.norm, args.euploid, outd=args.outd, step=args.step, rgb=args.rgb)
     if args.regionsfile:
-        plot_regions(args.regionsfile, args.euploid, outd=args.outd)
+        plot_upd_regions(args.regionsfile, args.euploid, outd=args.outd)
     if len(sys.argv[1:]) == 0:
         parser.print_help()
         # parser.print_usage() # for just the usage line
