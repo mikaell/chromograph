@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.1]
+### Fixed
+- Bugfix: outd ignored for upd sites 
+
 ## [0.3.0]
 ### Added
 - Change flag "upd" to "sites
@@ -9,7 +13,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Refactor code
 
 ## [0.2.1]
-
 ### Fixed
 - When using `euploid` flag written empty png:s did not match correct genome prefix (37 vs 38)
 
