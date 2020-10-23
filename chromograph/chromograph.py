@@ -39,8 +39,8 @@ matplotlib.use("Agg")
 HELP_STR_RGB = "graph color in RGB hex (only in combination with --coverage)"
 HELP_STR_COMBINE = "plot all graphs in one file, default one graph per file"
 HELP_STR_NORM = "normalize data (only used for wig/coverage)"
-HELP_STR_UPD = "input UPD sites file on format {}"
-HELP_STR_REGIONS = "input UPD regions file"
+HELP_STR_UPD_SITE = "input UPD sites file on format {}"
+HELP_STR_UPD_REGIONS = "input UPD regions file"
 HELP_STR_IDEO = "input ideogram (bed-file) on format {}"
 HELP_STR_COV = "input fixed step wig-file"
 HELP_STR_VSN = "Display program version ({}) and exit."
@@ -371,11 +371,11 @@ def plot_upd_sites(filepath, *args, **kwargs):
     settings = normalize_upd_sites_args(filepath, args, kwargs)
 
     print(
-        "Plot UPD with settings\ncombine:{}\neuploid:{}".format(
+        "Plot UPD Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
         )
     )
-    dataframe = bed_to_dataframe(settings["filepath"], UPD_FORMAT)
+    dataframe = bed_to_dataframe(filepath, UPD_FORMAT)
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     chromosome_list = cfg["chromosome_int"]
     dataframe = filter_dataframe(
@@ -573,14 +573,14 @@ def main():
     Parse incoming args and call correct function"""
     parser = ArgumentParser()
     parser.add_argument(
-        "-u", "--upd", dest="updfile", help=HELP_STR_UPD.format(UPD_FORMAT), metavar="FILE"
+        "-u", "--sites", dest="updfile", help=HELP_STR_UPD_SITE.format(UPD_FORMAT), metavar="FILE"
     )
     parser.add_argument(
-        "-g", "--regions", dest="regionsfile", help=HELP_STR_REGIONS, metavar="FILE"
+        "-g", "--regions", dest="regionsfile", help=HELP_STR_UPD_REGIONS, metavar="FILE"
     )
     parser.add_argument("-e", "--ideo", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
     parser.add_argument("-w", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
-    parser.add_argument("-y", "--roh", dest="roh", help="regions of homozygosity", metavar="FILE")
+    parser.add_argument("-y", "--roh", dest="roh", help="TODO: regions of homozygosity", metavar="FILE")
     parser.add_argument("-o", "--outd", dest="outd", help="output dir", metavar="FILE")
     parser.add_argument("-r", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
     parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
