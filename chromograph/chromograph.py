@@ -527,7 +527,6 @@ def normalize_upd_sites_args(filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict
     for upd sites"""
     settings = normalize_args(filepath, args, kwargs)
-    settings["outd"] = os.path.dirname(filepath)
     if "combine" in args:
         settings["combine"] = True
     return settings
