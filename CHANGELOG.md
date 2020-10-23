@@ -2,10 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x]
+## [0.3.0]
 ### Added
-
+- Change flag "upd" to "sites
 ### Fixed
+- Refactor code
 
 ## [0.2.1]
 
