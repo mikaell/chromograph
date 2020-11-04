@@ -53,7 +53,7 @@ YBASE = 0
 SPACE = 1
 FIGSIZE = (6, 8)
 FIGSIZE_SINGLE = (8, 8)
-UPD_FORMAT = ["chrom", "start", "end", "updType"]
+UPD_SITES_FORMAT = ["chrom", "start", "end", "updType"]
 IDEOGRAM_FORMAT = ["chrom", "start", "end", "name", "gStain"]
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#e89f00"
@@ -109,6 +109,7 @@ get_color = {
     # UPD region colors
     "PATERNAL": "#0044ff",  # Blue
     "MATERNAL": "#aa2200",
+    
 }
 
 
@@ -464,6 +465,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
 
 def plot_upd_regions(file, *args, **kwargs):
     """  Print region as PNG file"""
+    # These can show isodisomy or hetereodisomy in description
 
     # Parse sites upd file to brokenbarcollection
     read_line = []
@@ -504,7 +506,8 @@ def sites_to_brokenbar(region):
     """ Make a MathPlotLIb 'BrokenbarCollection' from upd sites data"""
     start = int(region["start"])
     width = int(region["stop"]) - int(region["start"])
-    color = get_color[region["desc"]["origin"]]
+    color = get_color[region["desc"]["origin"]]  
+    color = get_color[region["desc"]["TYPE"]]    # <--- handle iso/hetereo here
     xranges = [[start, width]]
     yrange = (0, 1)
     return BrokenBarHCollection(xranges, yrange, facecolors=color, label=region["chr"])
@@ -573,7 +576,7 @@ def main():
     Parse incoming args and call correct function"""
     parser = ArgumentParser()
     parser.add_argument(
-        "-u", "--sites", dest="updfile", help=HELP_STR_UPD_SITE.format(UPD_FORMAT), metavar="FILE"
+        "-u", "--sites", dest="updfile", help=HELP_STR_UPD_SITE.format(UPD_SITES_FORMAT), metavar="FILE"
     )
     parser.add_argument(
         "-g", "--regions", dest="regionsfile", help=HELP_STR_UPD_REGIONS, metavar="FILE"
