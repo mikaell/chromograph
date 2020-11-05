@@ -2,7 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3.1]
+### [0.3.2]
+### Added
+- Add Support for Hetero/Isodisomy of UPD Region Files.
+
+### [0.3.1]
 ### Fixed
 - Bugfix: outd ignored for upd sites 
 
