@@ -23,12 +23,12 @@ from matplotlib import pyplot as plt
 from matplotlib.collections import BrokenBarHCollection
 from chromograph import __version__
 from .chr_utils import (
-    read_cfg,
+    chr_type_format,
     filter_dataframe,
     outpath,
-    parse_wig_declaration,
+    parse_bed,
     parse_upd_regions,
-    chr_type_format,
+    parse_wig_declaration
 )
 
 matplotlib.use("Agg")
@@ -224,6 +224,7 @@ def print_empty_pngs(file, outd, is_printed):
     """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
+
     gene_build = chr_type_format(is_printed[0])
 
     for chrom in CHROMOSOMES:
@@ -314,7 +315,6 @@ def plot_ideogram(file, *args, **kwargs):
     Returns:
           None
     """
-    cfg = read_cfg()
     settings = normalize_args(file, args, kwargs)
     print(
         "Plot ideograms with settings\ncombine:{}\noutd:{}".format(
@@ -324,10 +324,10 @@ def plot_ideogram(file, *args, **kwargs):
 
     # try two different chromosome formats, if both result in
     # an empty dataframe, raise IdeoParseError
-    for setting in ["chromosome_str", "chromosome_int"]:
-        chromosome_list = cfg[setting]
+    for chr_name in ["str", "int"]:
+        chromosome_list = get_chromosome_list(chr_name)
         dataframe = bed_to_dataframe(file, IDEOGRAM_FORMAT)
-        # delete chromosomes not in CHROMOSOME_LIST
+        # delete chromosomes not in CHROMOSOMES
         dataframe = filter_dataframe(dataframe, chromosome_list)
         if dataframe.size > 0:
             break
@@ -344,6 +344,13 @@ def plot_ideogram(file, *args, **kwargs):
         print_individual_pics(dataframe, file, settings["outd"], settings["euploid"])
 
 
+def get_chromosome_list(kind):
+    """Return list of chromsome names, on format '12' or 'chr12' """
+    if kind == "str":
+        return ["chr"+chr for chr in CHROMOSOMES]
+    return CHROMOSOMES
+    
+    
 def plot_roh(file, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy or heterodisomy"""
     return "TODO"
@@ -367,17 +374,18 @@ def plot_upd_sites(filepath, *args, **kwargs):
     Returns: None
 
     """
-    cfg = read_cfg()
     settings = normalize_upd_sites_args(filepath, args, kwargs)
-
     print(
         "Plot UPD Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
         )
     )
     dataframe = bed_to_dataframe(filepath, UPD_FORMAT)
+    print(parse_bed(filepath))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
-    chromosome_list = cfg["chromosome_int"]
+    # chromosome_list = get_chromosome_list(parse_bed(filepath))
+    chromosome_list = get_chromosome_list("int")
+    print(dataframe.chrom)
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -399,15 +407,14 @@ def plot_wig(filepath, *args, **kwargs):
         filepath(str)
 
     Optional Args:
-        combine -- output all graphs in one png
+        combine -- output all graphs in one png       
         normalize -- normalize to mean
         outd(str) -- output directory
     Returns: None
 
     """
-    cfg = read_cfg()
-    decl = parse_wig_declaration(filepath, " ")
-    settings = normalize_wig_args(decl, filepath, args, kwargs)
+    header = parse_wig_declaration(filepath)
+    settings = normalize_wig_args(header, filepath, args, kwargs)
 
     print(
         "Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}\neuploid:{}".format(
@@ -419,11 +426,11 @@ def plot_wig(filepath, *args, **kwargs):
         )
     )
 
-    chromosome_list = list_type(decl["chrom"], cfg)
+    chromosome_list = get_chromosome_list(header["chrom"])
     dataframe = wig_to_dataframe(filepath, settings["fixedStep"], WIG_FORMAT)
     dataframe = filter_dataframe(
         dataframe, chromosome_list
-    )  # delete chromosomes not in CHROMOSOME_LIST
+    )  # delete chromosomes not in CHROMOSOMES
     dataframe["normalized_coverage"] = (dataframe.coverage / dataframe.coverage.mean()).round(0)
     print_wig(
         dataframe,
@@ -510,12 +517,12 @@ def sites_to_brokenbar(region):
     return BrokenBarHCollection(xranges, yrange, facecolors=color, label=region["chr"])
 
 
-def normalize_wig_args(decl, filepath, args, kwargs):
+def normalize_wig_args(header, filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict
     for coverage/wig"""
     settings = normalize_args(filepath, args, kwargs)
     settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
-    settings["fixedStep"] = decl["step"]  # cfg['wig_step']
+    settings["fixedStep"] = header["step"] 
     if "rgb" in kwargs and kwargs["rgb"] is not None:
         settings["color"] = rgb_str(kwargs["rgb"])
     if "step" in kwargs and kwargs["step"] is not None:
@@ -558,24 +565,16 @@ def rgb_str(color):
     return "#" + str(color)
 
 
-def list_type(chr_type, cfg):
-    """ Determine type and return list of possible
-    field names in parsed data frame"""
-    if chr_type == "int":
-        return cfg["chromosome_int"]
-    return cfg["chromosome_str"]
-
-
 def main():
     """Main function for Chromograph
 
     Parse incoming args and call correct function"""
     parser = ArgumentParser()
     parser.add_argument(
-        "-u", "--sites", dest="updfile", help=HELP_STR_UPD_SITE.format(UPD_FORMAT), metavar="FILE"
+        "-u", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT), metavar="FILE"
     )
     parser.add_argument(
-        "-g", "--regions", dest="regionsfile", help=HELP_STR_UPD_REGIONS, metavar="FILE"
+        "-g", "--regions", dest="upd_regions", help=HELP_STR_UPD_REGIONS, metavar="FILE"
     )
     parser.add_argument("-e", "--ideo", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
     parser.add_argument("-w", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
@@ -597,8 +596,8 @@ def main():
 
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)
-    if args.updfile:
-        plot_upd_sites(args.updfile, args.combine, args.euploid, outd=args.outd, step=args.step)
+    if args.upd_sites:
+        plot_upd_sites(args.upd_sites, args.combine, args.euploid, outd=args.outd, step=args.step)
     if args.roh:
         plot_roh(args.roh, args.combine, args.euploid, outd=args.outd)
     if args.coverage_file:
@@ -611,8 +610,8 @@ def main():
             step=args.step,
             rgb=args.rgb,
         )
-    if args.regionsfile:
-        plot_upd_regions(args.regionsfile, args.euploid, outd=args.outd)
+    if args.upd_regions:
+        plot_upd_regions(args.upd_regions, args.euploid, outd=args.outd)
     if len(sys.argv[1:]) == 0:
         parser.print_help()
         # parser.print_usage() # for just the usage line
