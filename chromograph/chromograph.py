@@ -111,7 +111,12 @@ get_color = {
     "MATERNAL": "#aa2200",
 }
 
+get_tint_color = {
+    # Heterodisomy colors
+    "PATERNAL": "#6C88FF",  # Light blue
+    "MATERNAL": "#F48C95",  # Light Red
 
+}
 def assure_dir(outd):
     """Create directory 'outd' if it does not exist"""
     print("outd: {}".format(outd))
@@ -470,7 +475,11 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
 
 
 def plot_upd_regions(file, *args, **kwargs):
-    """  Print region as PNG file"""
+    """  Print region as PNG file
+    <chrom>  <start>  <stop>   <desc>
+    where desc is
+    [ORIGIN;TYPE;LOW_SIZE;INF_SITES;SNPS;HET_HOM;OPP_SITES;START_LOW;END_HIGH;HIGH_SIZE]    
+    """
 
     # Parse sites upd file to brokenbarcollection
     read_line = []
@@ -485,20 +494,24 @@ def plot_upd_regions(file, *args, **kwargs):
         for line in filepointer:
             read_line.append(parse_upd_regions(line))
     # TODO: 'sites' in a function called 'plot_regions'
-    broken_bar = [sites_to_brokenbar(i) for i in read_line]
+    hbar_list = [sites_to_brokenbar(i) for i in read_line]
 
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, 0.5))
     x_axis = fig.add_subplot(111)
     is_printed = []
-    for collection in broken_bar:
-        x_axis.add_collection(collection)
-        common_settings(x_axis)
-        x_axis.set_xlim((-12159968, 255359341))  # try to mimic nice bounds
-        outfile = outpath(settings["outd"], file, collection.get_label())
+    for bars in hbar_list:
+        for bar in bars:
+            print("adding: {}".format(bar))
+            x_axis.add_collection(bar)
+            common_settings(x_axis)
+            x_axis.set_xlim((-12159968, 255359341))  # try to mimic nice bounds
+            outfile = outpath(settings["outd"], file, bar.get_label())
+            is_printed.append(bar.get_label())
+
+        outfile = outpath(settings["outd"], file, bar.get_label())
         fig.savefig(outfile, transparent=False, bbox_inches="tight", pad_inches=0)
         x_axis.cla()  # clear canvas before next iteration
-        is_printed.append(collection.get_label())
 
     # print each name only once
     for name in dict.fromkeys(is_printed):
@@ -508,13 +521,23 @@ def plot_upd_regions(file, *args, **kwargs):
 
 
 def sites_to_brokenbar(region):
-    """ Make a MathPlotLIb 'BrokenbarCollection' from upd sites data"""
+    """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
+       Isodisomy will have one block and one color. Heterodisomy will be two adjecent bars
+       with two colors
+
+       Returns: list of brokenbarcollections
+    """
     start = int(region["start"])
     width = int(region["stop"]) - int(region["start"])
     color = get_color[region["desc"]["origin"]]
     xranges = [[start, width]]
     yrange = (0, 1)
-    return BrokenBarHCollection(xranges, yrange, facecolors=color, label=region["chr"])
+    if region["desc"]["type"].lower() == "heterodisomy":
+            tint_color = get_tint_color[region["desc"]["origin"]]
+            hbar_lower = BrokenBarHCollection(xranges, (0.5, 1), facecolors=tint_color, label=region["chr"])
+            hbar_upper = BrokenBarHCollection(xranges, (0, 0.5), facecolors=color, label=region["chr"])
+            return [hbar_lower, hbar_upper]
+    return [BrokenBarHCollection(xranges, yrange, facecolors=color, label=region["chr"])]
 
 
 def normalize_wig_args(header, filepath, args, kwargs):
