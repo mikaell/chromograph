@@ -436,6 +436,7 @@ def plot_wig(filepath, *args, **kwargs):
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOMES
+    # df[df[A]!=0].mean
     dataframe["normalized_coverage"] = (dataframe.coverage / dataframe.coverage.mean()).round(0)
     print_wig(
         dataframe,
@@ -457,9 +458,9 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
             fig, axis = plt.subplots(figsize=(8, 0.7))
             common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, 5)
+            plt.ylim(0, 75)
             axis.set_ylim(bottom=0)
-            axis.set_xlim((0, 255359341))  # try to mimic nice bounds
+            axis.set_xlim(0, 25535934)  # try to mimic nice bounds
             fig.tight_layout()
             outfile = outpath(outd, file, chrom_data["label"])
             print("outfile: {}".format(outfile))
