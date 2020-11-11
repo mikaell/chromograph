@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [0.3.3]
+### Fixed
+- Coverage plots from Tiddit data was printed strange
+
 ### [0.3.2]
 ### Added
 - Add Support for Hetero/Isodisomy of UPD Region Files.
