@@ -47,7 +47,7 @@ HELP_STR_VSN = "Display program version ({}) and exit."
 HELP_STR_EU = "always output an euploid amount of files -some may be empty PNGs"
 
 PADDING = 200000
-COVERAGE_END = 249255000  # write all coverage files to the same size canvas
+CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
 YBASE = 0
 SPACE = 1
@@ -200,10 +200,10 @@ def print_individual_pics(dataframe, infile, outd, euploid):
     for collection in bed_collections_generator(dataframe, HEIGHT):
         axis.add_collection(collection)
         common_settings(axis)
-        axis.set_xlim((-12159968, 255359341))  # try to mimic nice bounds
+        axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
         outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
@@ -222,7 +222,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     axis.axis("tight")
     outfile = outpath(outd, infile, "combined")
     print("outfile: {}".format(outfile))
-    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
+    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
 
 
 def print_empty_pngs(file, outd, is_printed):
@@ -276,7 +276,7 @@ def wig_to_dataframe(infile, step, col_format):
                 print(line)
                 start_pos = [chrom, 0, 1]  # write 0 in beginning, works against bug
                 stop_pos = [chrom, 0, pos + 1]  # write 0 at end removes linear slope
-                last_pos = [chrom, 0, COVERAGE_END]  # write trailing char for scale when plotting
+                last_pos = [chrom, 0, CHROM_END_POS] # write trailing char for scale when plotting
                 #               coverage_data.insert(start_pos)
                 coverage_data.append(stop_pos)
                 coverage_data.append(last_pos)
@@ -460,11 +460,11 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
             plt.ylim(0, 75)
             axis.set_ylim(bottom=0)
-            axis.set_xlim(0, 25535934)  # try to mimic nice bounds
+            axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
             fig.tight_layout()
             outfile = outpath(outd, file, chrom_data["label"])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
+            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
@@ -506,12 +506,12 @@ def plot_upd_regions(file, *args, **kwargs):
             print("adding: {}".format(bar))
             x_axis.add_collection(bar)
             common_settings(x_axis)
-            x_axis.set_xlim((-12159968, 255359341))  # try to mimic nice bounds
+            x_axis.set_xlim(0, CHROM_END_POS)  # try to mimic nice bounds
             outfile = outpath(settings["outd"], file, bar.get_label())
             is_printed.append(bar.get_label())
 
         outfile = outpath(settings["outd"], file, bar.get_label())
-        fig.savefig(outfile, transparent=False, bbox_inches="tight", pad_inches=0)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
@@ -611,12 +611,14 @@ def main():
     parser.add_argument("--version", help=HELP_STR_VSN.format(__version__),action="version", version="chromograph {}".format(__version__) )
     parser.add_argument("-p", "--euploid", help= HELP_STR_EU, action="store_true")
 
+
     args = parser.parse_args()
 
     # Make command line and library interfaces behave identical regarding args
     args.norm = "norm" if args.norm else None
     args.combine = "combine" if args.combine else None
     args.euploid = "euploid" if args.euploid else None
+
 
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)
