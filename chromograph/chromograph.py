@@ -51,7 +51,8 @@ CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
 YBASE = 0
 SPACE = 1
-FIGSIZE = (6, 8)
+FIGSIZE = (6, 8) # 7750 x 385 
+FIGSIZE_WIG = (8.05, 0.685)  # 7750 x 385
 FIGSIZE_SINGLE = (8, 8)
 UPD_FORMAT = ["chrom", "start", "end", "updType"]
 IDEOGRAM_FORMAT = ["chrom", "start", "end", "name", "gStain"]
@@ -455,7 +456,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
     if not combine:  # Plot one chromosome per png
         is_printed = []
         for chrom_data in coverage_generator(dataframe, data_state):
-            fig, axis = plt.subplots(figsize=(8, 0.7))
+            fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
             plt.ylim(0, 75)
