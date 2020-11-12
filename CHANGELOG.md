@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [0.3.4]
+### Added
+- Picture DPI increase from 100 X 100 to 1000 X 1000
+### Fixed
+- Alignment of BED files was offset 
+
 ### [0.3.3]
 ### Fixed
 - Coverage plots from Tiddit data was printed strange
