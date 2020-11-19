@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [0.3.6]
+### Added
+- Region UPD pictures are now split in the middle to visually indicate two
+chromosomes.
+
 ### [0.3.5]
 ### Added
 - Pixel perfect prints 7750 X 385 px
