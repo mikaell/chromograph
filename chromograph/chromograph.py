@@ -51,7 +51,7 @@ CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
 YBASE = 0
 SPACE = 1
-FIGSIZE = (6, 8) # 7750 x 385 
+FIGSIZE = (6, 8) # 7750 x 385
 FIGSIZE_WIG = (8.05, 0.685)  # 7750 x 385
 FIGSIZE_SINGLE = (8, 8)
 UPD_FORMAT = ["chrom", "start", "end", "updType"]
@@ -110,14 +110,13 @@ get_color = {
     # UPD region colors
     "PATERNAL": "#0044ff",  # Blue
     "MATERNAL": "#aa2200",
-}
-
-get_tint_color = {
     # Heterodisomy colors
-    "PATERNAL": "#6C88FF",  # Light blue
-    "MATERNAL": "#F48C95",  # Light Red
+    "PATERNAL_LIGHT": "#6C88FF",  # Light blue
+    "MATERNAL_LIGHT": "#F48C95",  # Light Red
 
 }
+
+
 def assure_dir(outd):
     """Create directory 'outd' if it does not exist"""
     print("outd: {}".format(outd))
@@ -355,8 +354,8 @@ def get_chromosome_list(kind):
     if kind == "str":
         return ["chr"+chr for chr in CHROMOSOMES]
     return CHROMOSOMES
-    
-    
+
+
 def plot_roh(file, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy or heterodisomy"""
     return "TODO"
@@ -413,7 +412,7 @@ def plot_wig(filepath, *args, **kwargs):
         filepath(str)
 
     Optional Args:
-        combine -- output all graphs in one png       
+        combine -- output all graphs in one png
         normalize -- normalize to mean
         outd(str) -- output directory
     Returns: None
@@ -480,7 +479,7 @@ def plot_upd_regions(file, *args, **kwargs):
     """  Print region as PNG file
     <chrom>  <start>  <stop>   <desc>
     where desc is
-    [ORIGIN;TYPE;LOW_SIZE;INF_SITES;SNPS;HET_HOM;OPP_SITES;START_LOW;END_HIGH;HIGH_SIZE]    
+    [ORIGIN;TYPE;LOW_SIZE;INF_SITES;SNPS;HET_HOM;OPP_SITES;START_LOW;END_HIGH;HIGH_SIZE]
     """
 
     # Parse sites upd file to brokenbarcollection
@@ -524,30 +523,36 @@ def plot_upd_regions(file, *args, **kwargs):
 
 def sites_to_brokenbar(region):
     """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
-       Isodisomy will have one block and one color. Heterodisomy will be two adjecent bars
-       with two colors
+       Isodisomy will have one block and one color. Heterodisomy will be two adjecent bars with two colors. Both plots will have a transperant middle line for
+    aestetics.
 
        Returns: list of brokenbarcollections
     """
     start = int(region["start"])
     width = int(region["stop"]) - int(region["start"])
-    color = get_color[region["desc"]["origin"]]
     xranges = [[start, width]]
-    yrange = (0, 1)
-    if region["desc"]["type"].lower() == "heterodisomy":
-            tint_color = get_tint_color[region["desc"]["origin"]]
-            hbar_lower = BrokenBarHCollection(xranges, (0.5, 1), facecolors=tint_color, label=region["chr"])
-            hbar_upper = BrokenBarHCollection(xranges, (0, 0.5), facecolors=color, label=region["chr"])
-            return [hbar_lower, hbar_upper]
-    return [BrokenBarHCollection(xranges, yrange, facecolors=color, label=region["chr"])]
+    disomy_type = region["desc"]["type"].lower()
+    origin = region["desc"]["origin"]
+    color = get_color[origin]
+    upper_color = get_tint_color(disomy_type, origin)
 
+    hbar_upper = BrokenBarHCollection(xranges, (0.52, 1), facecolors=upper_color, label=region["chr"])
+    hbar_lower = BrokenBarHCollection(xranges, (0, 0.48), facecolors=color, label=region["chr"])
+    return [hbar_lower, hbar_upper]
+
+
+def get_tint_color(disomy_type, parent):
+    """If heterodisomy return a lighter color"""
+    if disomy_type == "heterodisomy":
+        return get_color[parent+"_LIGHT"]
+    return get_color[parent]
 
 def normalize_wig_args(header, filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict
     for coverage/wig"""
     settings = normalize_args(filepath, args, kwargs)
     settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
-    settings["fixedStep"] = header["step"] 
+    settings["fixedStep"] = header["step"]
     if "rgb" in kwargs and kwargs["rgb"] is not None:
         settings["color"] = rgb_str(kwargs["rgb"])
     if "step" in kwargs and kwargs["step"] is not None:
