@@ -503,7 +503,6 @@ def plot_upd_regions(file, *args, **kwargs):
     is_printed = []
     for bars in hbar_list:
         for bar in bars:
-            print("adding: {}".format(bar))
             x_axis.add_collection(bar)
             common_settings(x_axis)
             x_axis.set_xlim(0, CHROM_END_POS)  # try to mimic nice bounds
