@@ -268,14 +268,16 @@ def wig_to_dataframe(infile, step, col_format):
     chrom = ""
     for line in filestream.readlines():
         try:
-            wig_value = float(line)
+            if line == "NaN\n":
+                wig_value = 0
+            else:
+                wig_value = float(line)
             wig_value = wig_value if wig_value < WIG_MAX else WIG_MAX
             coverage_data.append([chrom, wig_value, pos])
             pos += step
         except ValueError:
             reresult = re.search("chrom=(\w*)", line)  # find chromosome name in line
             if reresult:
-                print(line)
                 start_pos = [chrom, 0, 1]  # write 0 in beginning, works against bug
                 stop_pos = [chrom, 0, pos + 1]  # write 0 at end removes linear slope
                 last_pos = [chrom, 0, CHROM_END_POS] # write trailing char for scale when plotting
@@ -358,7 +360,7 @@ def get_chromosome_list(kind):
     return CHROMOSOMES
 
 
-def plot_roh(file, *args, **kwargs):
+def plot_roh(bed_file, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy or heterodisomy"""
     return "TODO"
 
@@ -459,7 +461,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, 75)
+            plt.ylim(0, 1)
             axis.set_ylim(bottom=0)
             axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
             fig.tight_layout()
