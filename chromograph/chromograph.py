@@ -110,6 +110,8 @@ get_color = {
     # UPD region colors
     "PATERNAL": "#0044ff",  # Blue
     "MATERNAL": "#aa2200",
+    "HOMODISOMY/DELETION": "#FFE4B5",   # Moccasin
+    "HETERODISOMY/DELETION": "#BDB76B", # Dark khaki
     # Heterodisomy colors
     "PATERNAL_LIGHT": "#6C88FF",  # Light blue
     "MATERNAL_LIGHT": "#F48C95",  # Light Red
@@ -390,7 +392,6 @@ def plot_upd_sites(filepath, *args, **kwargs):
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     # chromosome_list = get_chromosome_list(parse_bed(filepath))
     chromosome_list = get_chromosome_list("int")
-    print(dataframe.chrom)
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -494,13 +495,15 @@ def plot_upd_regions(file, *args, **kwargs):
     with open(file) as filepointer:
         for line in filepointer:
             read_line.append(parse_upd_regions(line))
-    # TODO: 'sites' in a function called 'plot_regions'
-    hbar_list = [sites_to_brokenbar(i) for i in read_line]
+    region_list = [region_to_dict(i) for i in read_line]
+    region_list_chr = compile_per_chrom(region_list)
+    hbar_list = regions_to_hbar(region_list_chr)
 
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, 0.5))
     x_axis = fig.add_subplot(111)
     is_printed = []
+
     for bars in hbar_list:
         for bar in bars:
             x_axis.add_collection(bar)
@@ -519,32 +522,75 @@ def plot_upd_regions(file, *args, **kwargs):
     if settings["euploid"]:
         print_empty_pngs(file, settings["outd"], is_printed)
 
-
-def sites_to_brokenbar(region):
+def regions_to_hbar(region_list_chr):
     """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
-       Isodisomy will have one block and one color. Heterodisomy will be two adjecent bars with two colors. Both plots will have a transperant middle line for
-    aestetics.
+       Isodisomy will have one block and one color. Heterodisomy will
+       be two adjecent bars with two colors. Both plots will have a
+       transperant middle line for aestetics."""
+    return_list = []
+    for i in region_list_chr:
+        hbar_upper = BrokenBarHCollection(i["xranges"], (0.52, 1), facecolors=i["upper"], label=i["chr"])
+        hbar_lower = BrokenBarHCollection(i["xranges"], (0, 0.48), facecolors=i["lower"], label=i["chr"])
+        return_list.append([hbar_upper, hbar_lower])
+    return return_list
 
-       Returns: list of brokenbarcollections
-    """
+
+def region_to_dict(region):
     start = int(region["start"])
     width = int(region["stop"]) - int(region["start"])
-    xranges = [[start, width]]
+    xranges = (start, width)
     disomy_type = region["desc"]["type"].lower()
     origin = region["desc"]["origin"]
     color = get_color[origin]
     upper_color = get_tint_color(disomy_type, origin)
 
-    hbar_upper = BrokenBarHCollection(xranges, (0.52, 1), facecolors=upper_color, label=region["chr"])
-    hbar_lower = BrokenBarHCollection(xranges, (0, 0.48), facecolors=color, label=region["chr"])
-    return [hbar_lower, hbar_upper]
+    hbar_upper = {"xranges":xranges, "facecolors": upper_color, "label":region["chr"]}
+    hbar_lower = {"xranges":xranges, "facecolors": color, "label":region["chr"]}
+
+    return {"chr":region["chr"],
+            "xranges": xranges,
+            "hbar_lower": color,
+            "hbar_upper": upper_color}
+
+
+def compile_per_chrom(hbar_list):
+    """Return [{chr: upper: lower:}]"""
+    if hbar_list == []:
+        return []
+
+    mylist = []
+    comp = {"chr": None , "xranges":[], "upper":[], "lower":[]}
+    mylist.append(comp)
+
+    for i in hbar_list:
+        # same chromosome, add to lists
+        if mylist[-1]['chr'] is None:
+            mylist[-1]['chr'] = i["chr"]
+            mylist[-1]['xranges'].append(i["xranges"])
+            mylist[-1]['upper'].append(i["hbar_upper"])
+            mylist[-1]['lower'].append(i["hbar_lower"])
+        elif mylist[-1]['chr'] == i["chr"]:
+            mylist[-1]['xranges'].append(i["xranges"])
+            mylist[-1]['upper'].append(i["hbar_upper"])
+            mylist[-1]['lower'].append(i["hbar_lower"])
+        else:
+            mylist.append({"chr": i["chr"],
+                           "xranges":[i["xranges"]],
+                           "upper":[i["hbar_upper"]],
+                           "lower":[i["hbar_lower"]]})
+    return mylist
 
 
 def get_tint_color(disomy_type, parent):
     """If heterodisomy return a lighter color"""
     if disomy_type == "heterodisomy":
         return get_color[parent+"_LIGHT"]
+    if disomy_type == "homodisomy/deletion":
+        return get_color["HOMODISOMY/DELETION"]
+    if disomy_type == "heterodisomy/deletion":
+        return get_color["HETERODISOMY/DELETION"]
     return get_color[parent]
+
 
 def normalize_wig_args(header, filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict
