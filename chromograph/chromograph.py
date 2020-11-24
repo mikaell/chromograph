@@ -55,6 +55,7 @@ FIGSIZE = (6, 8) # 7750 x 385
 FIGSIZE_WIG = (8.05, 0.685)  # 7750 x 385
 FIGSIZE_SINGLE = (8, 8)
 UPD_FORMAT = ["chrom", "start", "end", "updType"]
+ROH_BED_FORMAT  =["chrom", "start", "end"]
 IDEOGRAM_FORMAT = ["chrom", "start", "end", "name", "gStain"]
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#e89f00"
@@ -361,8 +362,30 @@ def get_chromosome_list(kind):
 
 
 def plot_roh(bed_file, *args, **kwargs):
-    """Plot ROH file for analysis of isodisomy or heterodisomy"""
-    return "TODO"
+    """Plot ROH file for analysis of isodisomy"""
+    settings = normalize_upd_sites_args(bed_file, args, kwargs)
+    print(
+        "Plot RoH Sites with settings\ncombine:{}\neuploid:{}".format(
+            settings["combine"], settings["euploid"]
+        )
+    )
+    dataframe = bed_to_dataframe(bed_file, ROH_BED_FORMAT)
+    print(parse_bed(bed_file))
+    dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
+    chromosome_list = get_chromosome_list("int")
+    dataframe = filter_dataframe(
+        dataframe, chromosome_list
+    )  # delete chromosomes not in CHROMOSOME_LIST_UPD
+    dataframe["width"] = (dataframe.end - dataframe.start) + PADDING
+    dataframe["colors"] = "#42a209"
+    chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
+    if settings["combine"]:
+        print_combined_pic(
+            dataframe, chrom_ybase, chrom_centers, bed_file, settings["outd"], chromosome_list
+        )
+    else:
+        print_individual_pics(dataframe, bed_file, settings["outd"], settings["euploid"])
+
 
 
 def plot_upd_sites(filepath, *args, **kwargs):
@@ -655,7 +678,7 @@ def main():
     )
     parser.add_argument("-e", "--ideo", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
     parser.add_argument("-w", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
-    parser.add_argument("-y", "--roh", dest="roh", help="TODO: regions of homozygosity", metavar="FILE")
+    parser.add_argument("-y", "--roh", dest="roh", help="regions of homozygosity bed-file", metavar="FILE")
     parser.add_argument("-o", "--outd", dest="outd", help="output dir", metavar="FILE")
     parser.add_argument("-r", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
     parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
