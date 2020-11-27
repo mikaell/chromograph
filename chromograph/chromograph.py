@@ -538,7 +538,7 @@ def plot_upd_regions(file, *args, **kwargs):
             is_printed.append(bar.get_label())
 
         outfile = outpath(settings["outd"], file, bar.get_label())
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
