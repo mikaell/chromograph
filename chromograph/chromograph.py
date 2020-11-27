@@ -58,7 +58,7 @@ UPD_FORMAT = ["chrom", "start", "end", "updType"]
 ROH_BED_FORMAT  =["chrom", "start", "end"]
 IDEOGRAM_FORMAT = ["chrom", "start", "end", "name", "gStain"]
 WIG_FORMAT = ["chrom", "coverage", "pos"]
-WIG_ORANGE = "#e89f00"
+WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
 PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
 CHROMOSOMES = [
@@ -93,29 +93,29 @@ DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False}
 
 get_color = {
     # Cytoband colors
+    "acen": "#b56666",
     "gneg": "#f7f7f7",
+    "gpos100": "#121212",
     "gpos25": "#666666",
     "gpos50": "#606060",
     "gpos75": "#2e2e2e",
-    "gpos100": "#121212",
-    "acen": "#b56666",
     "gvar": "#777777",
     "stalk": "#444444",
     # UPD sites colors
-    "PB_HOMOZYGOUS": "#222222",
-    "ANTI_UPD": "#555555",
-    "PB_HETEROZYGOUS": "#888888",
-    "UNINFORMATIVE": "#333333",
+    "ANTI_UPD": "#509188",         # Medium green
+    "PB_HETEROZYGOUS": "#35605A",  # Dark slate greenish gray
+    "PB_HOMOZYGOUS": "#6B818C",    # Slate gray
+    "UNINFORMATIVE": "#FFFFFF",    # White
     "UPD_MATERNAL_ORIGIN": "#aa2200",  # Red
     "UPD_PATERNAL_ORIGIN": "#0044ff",  # Blue
     # UPD region colors
-    "PATERNAL": "#0044ff",  # Blue
-    "MATERNAL": "#aa2200",
-    "HOMODISOMY/DELETION": "#FFE4B5",   # Moccasin
     "HETERODISOMY/DELETION": "#BDB76B", # Dark khaki
+    "HOMODISOMY/DELETION": "#FFE4B5",   # Moccasin
+    "MATERNAL": "#aa2200",
+    "PATERNAL": "#0044ff",  # Blue
     # Heterodisomy colors
-    "PATERNAL_LIGHT": "#6C88FF",  # Light blue
     "MATERNAL_LIGHT": "#F48C95",  # Light Red
+    "PATERNAL_LIGHT": "#6C88FF",  # Light blue
 
 }
 
@@ -377,7 +377,7 @@ def plot_roh(bed_file, *args, **kwargs):
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
     dataframe["width"] = (dataframe.end - dataframe.start) + PADDING
-    dataframe["colors"] = "#42a209"
+    dataframe["colors"] = get_color["PB_HOMOZYGOUS"]
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
     if settings["combine"]:
         print_combined_pic(
@@ -484,7 +484,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, 1)
+            plt.ylim(0, 75)
             axis.set_ylim(bottom=0)
             axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
             fig.tight_layout()
