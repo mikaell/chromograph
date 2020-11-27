@@ -431,7 +431,25 @@ def plot_upd_sites(filepath, *args, **kwargs):
         print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
 
 
-def plot_wig(filepath, *args, **kwargs):
+def plot_coverage_wig(filepath, *args, **kwargs):
+    """Plot a wig file representing coverage"""
+    color = WIG_ORANGE
+    ylim_height = 75
+    if "rgb" in kwargs and kwargs["rgb"] is  None:
+        kwargs["rgb"] = WIG_ORANGE
+    plot_wig(filepath, ylim_height, *args, **kwargs)
+
+
+
+def plot_homosnp_wig(filepath, *args, **kwargs):
+    """Plot a wig file where entries represent percent of homozygous SNPs"""
+    ylim_height = 1
+    if "rgb" in kwargs and kwargs["rgb"] is  None:
+        kwargs["rgb"] ="#A98200"  # Dark Goldenrod
+    plot_wig(filepath, ylim_height, *args, **kwargs)
+
+
+def plot_wig(filepath, ylim_height, *args, **kwargs):
     """Outputs png:s of data given on WIG format
 
     Args:
@@ -472,10 +490,11 @@ def plot_wig(filepath, *args, **kwargs):
         settings["normalize"],
         settings["color"],
         settings["euploid"],
+        ylim_height
     )
 
 
-def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
+def print_wig(dataframe, file, outd, combine, normalize, color, euploid, ylim_height):
     """Print wig graph as PNG file"""
     data_state = "normalized_coverage" if normalize else "coverage"
     if not combine:  # Plot one chromosome per png
@@ -484,7 +503,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid):
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, 75)
+            plt.ylim(0, ylim_height)
             axis.set_ylim(bottom=0)
             axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
             fig.tight_layout()
@@ -679,6 +698,7 @@ def main():
     parser.add_argument("-e", "--ideo", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
     parser.add_argument("-w", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
     parser.add_argument("-y", "--roh", dest="roh", help="regions of homozygosity bed-file", metavar="FILE")
+    parser.add_argument("-m", "--hozysnp", dest="hozysnp_file", help="fraction of homozygous SNPs wig -file", metavar="FILE")
     parser.add_argument("-o", "--outd", dest="outd", help="output dir", metavar="FILE")
     parser.add_argument("-r", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
     parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
@@ -703,8 +723,18 @@ def main():
     if args.roh:
         plot_roh(args.roh, args.combine, args.euploid, outd=args.outd)
     if args.coverage_file:
-        plot_wig(
+        plot_coverage_wig(
             args.coverage_file,
+            args.combine,
+            args.norm,
+            args.euploid,
+            outd=args.outd,
+            step=args.step,
+            rgb=args.rgb,
+        )
+    if args.hozysnp_file:
+        plot_homosnp_wig(
+            args.hozysnp_file,
             args.combine,
             args.norm,
             args.euploid,
