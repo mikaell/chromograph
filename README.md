@@ -1,5 +1,12 @@
 # Chromograph
 
+
+---->
+## THIS README IS NOT UP TO DATE WITH LATEST CHANGES AND NEEDS UPDATE
+<----
+
+
+
 ## What is Chromograph?
 Chromograph is a python package to create PNG images from genetics data
 such as BED and WIG files. It is primarily build to integrate with
