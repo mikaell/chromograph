@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [1.0.0]
+### Added
+-Add support for autozygosity bed:s.
+-Add support for fraction of homozygosity wig:s
+### Changed
+-Command line arguments name and flags are changed. Not backwards compatible.
+-Printed colors daker and uniform 
+### Fixed
+-Bug that wrote over output
+-Debug prints removed
+
 ### [0.3.6]
 ### Added
 - Region UPD pictures are now split in the middle to visually indicate two
