@@ -36,15 +36,15 @@ matplotlib.use("Agg")
 # TODO: instead of padding look-ahead and contsrict if overlap
 # TODO: combined ROH image
 
-HELP_STR_RGB = "graph color in RGB hex (only in combination with --coverage)"
-HELP_STR_COMBINE = "plot all graphs in one file, default one graph per file"
-HELP_STR_NORM = "normalize data (only used for wig/coverage)"
-HELP_STR_UPD_SITE = "input UPD sites file on format {}"
-HELP_STR_UPD_REGIONS = "input UPD regions file"
-HELP_STR_IDEO = "input ideogram (bed-file) on format {}"
-HELP_STR_COV = "input fixed step wig-file"
+HELP_STR_COMBINE = "Write all graphs to one file (default one plot per file)"
+HELP_STR_COV = "Plot coverage from fixed step wig file"
+HELP_STR_EU = "Always output an euploid amount of files -even if some are empty"
+HELP_STR_IDEO = "Plot ideograms from bed-file on format {}"
+HELP_STR_NORM = "Normalize data (wig/coverage)"
+HELP_STR_RGB = "Set color (RGB hex, only with --coverage option)"
+HELP_STR_UPD_REGIONS = "Plot UPD regions from wig file"
+HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
-HELP_STR_EU = "always output an euploid amount of files -some may be empty PNGs"
 
 PADDING = 200000
 CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
@@ -361,7 +361,7 @@ def get_chromosome_list(kind):
     return CHROMOSOMES
 
 
-def plot_roh(bed_file, *args, **kwargs):
+def plot_autozyg(bed_file, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy"""
     settings = normalize_upd_sites_args(bed_file, args, kwargs)
     print(
@@ -689,23 +689,20 @@ def main():
 
     Parse incoming args and call correct function"""
     parser = ArgumentParser()
-    parser.add_argument(
-        "-u", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT), metavar="FILE"
-    )
-    parser.add_argument(
-        "-g", "--regions", dest="upd_regions", help=HELP_STR_UPD_REGIONS, metavar="FILE"
-    )
-    parser.add_argument("-e", "--ideo", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
-    parser.add_argument("-w", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
-    parser.add_argument("-y", "--roh", dest="roh", help="regions of homozygosity bed-file", metavar="FILE")
-    parser.add_argument("-m", "--hozysnp", dest="hozysnp_file", help="fraction of homozygous SNPs wig -file", metavar="FILE")
-    parser.add_argument("-o", "--outd", dest="outd", help="output dir", metavar="FILE")
-    parser.add_argument("-r", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
-    parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
+    parser.add_argument("-a", "--autozyg", dest="autozyg", help="Plot regions of autozygosity from bed file", metavar="FILE")
+    parser.add_argument("-c", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
+    parser.add_argument("-f", "--fracsnp", dest="hozysnp_file", help="Plot fraction of homozygous SNPs from wig file", metavar="FILE")
+    parser.add_argument("-i", "--ideogram", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
+    parser.add_argument("-r", "--regions", dest="upd_regions", help=HELP_STR_UPD_REGIONS, metavar="FILE"    )
+    parser.add_argument("-s", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT)+'\n\r', metavar="FILE"    )
+
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
-    parser.add_argument("-c", "--combine", help=HELP_STR_COMBINE, action="store_true")
     parser.add_argument("--version", help=HELP_STR_VSN.format(__version__),action="version", version="chromograph {}".format(__version__) )
-    parser.add_argument("-p", "--euploid", help= HELP_STR_EU, action="store_true")
+    parser.add_argument("-d", "--outd", dest="outd", help="output dir", metavar="FILE")
+    parser.add_argument("-e", "--euploid", help= HELP_STR_EU, action="store_true")
+    parser.add_argument("-k", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
+    parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
+    parser.add_argument("-x", "--combine", help=HELP_STR_COMBINE, action="store_true")
 
 
     args = parser.parse_args()
@@ -720,8 +717,8 @@ def main():
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)
     if args.upd_sites:
         plot_upd_sites(args.upd_sites, args.combine, args.euploid, outd=args.outd, step=args.step)
-    if args.roh:
-        plot_roh(args.roh, args.combine, args.euploid, outd=args.outd)
+    if args.autozyg:
+        plot_autozyg(args.autozyg, args.combine, args.euploid, outd=args.outd)
     if args.coverage_file:
         plot_coverage_wig(
             args.coverage_file,
