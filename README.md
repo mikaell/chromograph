@@ -12,7 +12,7 @@ Integrated with [Scout](https://github.com/Clinical-Genomics/scout)
 Chromograph can be used to visualise chromosomes:
 
 ![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
-
+![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
 
 ## Usage, command line
 Chromograph as used from the command line.
