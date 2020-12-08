@@ -13,6 +13,7 @@ such as BED and WIG files. It is primarily build to integrate with
 software form [Clinical Genomics](https://github.com/Clinical-Genomics) and
 [UPD Tool](https://github.com/bjhall/upd) but is stand-alone.
 
+UPD Tool is 
 Integrated with [Scout](https://github.com/Clinical-Genomics/scout)
 Chromograph can be used to visualise chromosomes:
 
@@ -23,24 +24,42 @@ Chromograph can be used to visualise chromosomes:
 Chromograph as used from the command line.
 
 ```
-Usage: chromograph [COMMAND] [OPTIONS]
+usage: chromograph [-h] [-a FILE] [-c FILE] [-f FILE] [-i FILE] [-r FILE]
+                   [-s FILE] [--step STEP] [--version] [-d FILE] [-e]
+                   [-k FILE] [-n] [-x]
 
-Command (one must be provided):
-  --upd <BED-filepath>
-  --ideo <BED-filepath>
-  --roh <WIG-filepath>
+optional arguments:
+  -h, --help            show this help message and exit
+  -a FILE, --autozyg FILE
+                        Plot regions of autozygosity from bed file [OPERATION]
+  -c FILE, --coverage FILE
+                        Plot coverage from fixed step wig file [OPERATION]
+  -f FILE, --fracsnp FILE
+                        Plot fraction of homozygous SNPs from wig file
+                        [OPERATION]
+  -i FILE, --ideogram FILE
+                        Plot ideograms from bed-file on format ['chrom',
+                        'start', 'end', 'name', 'gStain'] [OPERATION]
+  -r FILE, --regions FILE
+                        Plot UPD regions from bed file [OPERATION]
+  -s FILE, --sites FILE
+                        Plot UPD sites from bed file [OPERATION]
+  --step STEP           fixed step size (default 5000)
+  --version             Display program version (1.0.0) and exit.
+  -d FILE, --outd FILE  output dir
+  -e, --euploid         Always output an euploid amount of files -even if some
+                        are empty
+  -k FILE, --rgb FILE   Set color (RGB hex, only with --coverage option)
+  -n, --norm            Normalize data (wig/coverage)
+  -x, --combine         Write all graphs to one file (default one plot per
+                        file)
 
-Options:
-  --help        Show help message
-  --combine     Default one image/png
-  --normalize   normalize to mean (roh file only)
-  --step <int>  Default 5000 (roh file only)
-  --outd <path> Default outdir is infile
+One OPERATION Command is needed for Chromograph to produce output
 ```
 
 ### Example
 ```
-$ ./chromograph.py -r roh.wig --combine --step 3000
+$ ./chromograph.py --autozyg rhocall.bed --outd tmp/
 ```
 
 ## Usage, lib
@@ -56,22 +75,20 @@ optional. Example:
 
 ```
 
-## Configuration
-Configuration file is `config_chromograph.yml`.
-
-* `chromosome_str` used by roh and ideogram.
-* `chromosome_int` used by upd.
-* `wig_step` fixed size step in wig-files.
-
-
 
 
 ## Data Formats
-### UPD BED
+### UPD WIG, Regions
+
+
+
+### UPD BED, Sites
 UPD bed files are supported on format:
 ```
 'chrom', 'start', 'end', 'updType'
 ```
+UPD bed files are generated with the tool UPDtool. An example call: `TODO`
+
 
 ### Ideogram BED
 Ideogram bed files are supported on format:
@@ -79,11 +96,16 @@ Ideogram bed files are supported on format:
 IDEOGRAM_FORMAT = ['chrom', 'start', 'end', 'name', 'gStain']
 ```
 
-### ROH Coverage WIG
+### Coverage WIG
 ROH wig files are supported on format:
 ```
 ['chrom', 'coverage', 'pos']
 ```
+These can be created using Tiddit. For example: `TODO`
+
+
+### Regions of Autozygosity, BED
+
 
 ### Requirements
 Chromograph runs in Python 3.
@@ -98,3 +120,8 @@ Package requirements:
 ```
 pip install -r requirements.txt -e .
 ```
+
+
+
+## Deprecated Functionality 
+* Configuration file removed in version 0.3.2.

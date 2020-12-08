@@ -42,7 +42,7 @@ HELP_STR_EU = "Always output an euploid amount of files -even if some are empty"
 HELP_STR_IDEO = "Plot ideograms from bed-file on format {}"
 HELP_STR_NORM = "Normalize data (wig/coverage)"
 HELP_STR_RGB = "Set color (RGB hex, only with --coverage option)"
-HELP_STR_UPD_REGIONS = "Plot UPD regions from wig file"
+HELP_STR_UPD_REGIONS = "Plot UPD regions from bed file"
 HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
@@ -94,7 +94,7 @@ DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False}
 get_color = {
     # Cytoband colors
     "acen": "#b56666",
-    "gneg": "#f7f7f7",
+    "gneg": "#fafafa",
     "gpos100": "#121212",
     "gpos25": "#666666",
     "gpos50": "#606060",
@@ -193,7 +193,7 @@ def common_settings(axis):
     axis.set_axis_off()  # Remove black line surrounding pic.
 
 
-def print_individual_pics(dataframe, infile, outd, euploid):
+def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
     """Print one chromosomes per image file"""
     fig = plt.figure(figsize=(10, 0.5))
     axis = fig.add_subplot(111)
@@ -384,7 +384,7 @@ def plot_autozyg(bed_file, *args, **kwargs):
             dataframe, chrom_ybase, chrom_centers, bed_file, settings["outd"], chromosome_list
         )
     else:
-        print_individual_pics(dataframe, bed_file, settings["outd"], settings["euploid"])
+        print_individual_pics(dataframe, bed_file, settings["outd"], settings["euploid"], transperant=False)
 
 
 
@@ -688,13 +688,17 @@ def main():
     """Main function for Chromograph
 
     Parse incoming args and call correct function"""
-    parser = ArgumentParser()
-    parser.add_argument("-a", "--autozyg", dest="autozyg", help="Plot regions of autozygosity from bed file", metavar="FILE")
-    parser.add_argument("-c", "--coverage", dest="coverage_file", help=HELP_STR_COV, metavar="FILE")
-    parser.add_argument("-f", "--fracsnp", dest="hozysnp_file", help="Plot fraction of homozygous SNPs from wig file", metavar="FILE")
-    parser.add_argument("-i", "--ideogram", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT), metavar="FILE")
-    parser.add_argument("-r", "--regions", dest="upd_regions", help=HELP_STR_UPD_REGIONS, metavar="FILE"    )
-    parser.add_argument("-s", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT)+'\n\r', metavar="FILE"    )
+    parser = ArgumentParser(epilog=('''\
+         One OPERATION Command is needed for Chromograph to produce output
+
+         '''))
+    
+    parser.add_argument("-a", "--autozyg", dest="autozyg", help="Plot regions of autozygosity from bed file [OPERATION]", metavar="FILE")
+    parser.add_argument("-c", "--coverage", dest="coverage_file", help=HELP_STR_COV+" [OPERATION]", metavar="FILE")
+    parser.add_argument("-f", "--fracsnp", dest="hozysnp_file", help="Plot fraction of homozygous SNPs from wig file [OPERATION]", metavar="FILE")
+    parser.add_argument("-i", "--ideogram", dest="ideofile", help=HELP_STR_IDEO.format(IDEOGRAM_FORMAT)+" [OPERATION]", metavar="FILE")
+    parser.add_argument("-r", "--regions", dest="upd_regions", help=HELP_STR_UPD_REGIONS+" [OPERATION]", metavar="FILE"    )
+    parser.add_argument("-s", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT)+" [OPERATION]", metavar="FILE"    )
 
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
     parser.add_argument("--version", help=HELP_STR_VSN.format(__version__),action="version", version="chromograph {}".format(__version__) )
