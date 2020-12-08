@@ -9,10 +9,9 @@ software form [Clinical Genomics](https://github.com/Clinical-Genomics) and
 
 UPD Tool is 
 Integrated with [Scout](https://github.com/Clinical-Genomics/scout)
-Chromograph can be used to visualise chromosomes:
+Chromograph can be used to visualise chromosomes (Screenshot from Scout integrated with Chromograph):
 
-![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
-![screenshot](https://github.com/mikaell/chromograph/blob/master/scout_example.png)
+![screenshot](https://github.com/mikaell/chromograph/blob/master/screenshot.png)
 
 ## Usage, command line
 Chromograph as used from the command line.
