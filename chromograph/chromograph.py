@@ -312,11 +312,11 @@ def graph_coordinates(list_of_chromosomes):
     return chrom_ybase, chrom_centers
 
 
-def plot_ideogram(file, *args, **kwargs):
+def plot_ideogram(file_path, *args, **kwargs):
     """Visualize chromosome ideograms from bed-file. Format:
 
     Args:
-        file(string path)
+        file_path(string path)
 
     Optional Args:
         combine -- output all graphs in one png
@@ -325,7 +325,7 @@ def plot_ideogram(file, *args, **kwargs):
     Returns:
           None
     """
-    settings = normalize_args(file, args, kwargs)
+    settings = normalize_args(file_path, args, kwargs)
     print(
         "Plot ideograms with settings\ncombine:{}\noutd:{}".format(
             settings["combine"], settings["outd"]
@@ -336,7 +336,10 @@ def plot_ideogram(file, *args, **kwargs):
     # an empty dataframe, raise IdeoParseError
     for chr_name in ["str", "int"]:
         chromosome_list = get_chromosome_list(chr_name)
-        dataframe = bed_to_dataframe(file, IDEOGRAM_FORMAT)
+        dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
+        if dataframe.empty:
+            print('Error: {} is empty!'.format(file_path))
+            sys.exit(1)
         # delete chromosomes not in CHROMOSOMES
         dataframe = filter_dataframe(dataframe, chromosome_list)
         if dataframe.size > 0:
@@ -348,10 +351,10 @@ def plot_ideogram(file, *args, **kwargs):
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
     if settings["combine"]:
         print_combined_pic(
-            dataframe, chrom_ybase, chrom_centers, file, settings["outd"], chromosome_list
+            dataframe, chrom_ybase, chrom_centers, file_path, settings["outd"], chromosome_list
         )
     else:
-        print_individual_pics(dataframe, file, settings["outd"], settings["euploid"])
+        print_individual_pics(dataframe, file_path, settings["outd"], settings["euploid"])
 
 
 def get_chromosome_list(kind):
@@ -370,6 +373,10 @@ def plot_autozyg(bed_file, *args, **kwargs):
         )
     )
     dataframe = bed_to_dataframe(bed_file, ROH_BED_FORMAT)
+    if dataframe.empty:
+        print('Error: {} is empty!'.format(bed_file))
+        sys.exit(1)
+
     print(parse_bed(bed_file))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     chromosome_list = get_chromosome_list("int")
@@ -413,6 +420,9 @@ def plot_upd_sites(filepath, *args, **kwargs):
         )
     )
     dataframe = bed_to_dataframe(filepath, UPD_FORMAT)
+    if dataframe.empty:
+        print('Error: {} is empty!'.format(filepath))
+        sys.exit(1)
     print(parse_bed(filepath))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     # chromosome_list = get_chromosome_list(parse_bed(filepath))
@@ -692,7 +702,7 @@ def main():
          One OPERATION Command is needed for Chromograph to produce output
 
          '''))
-    
+
     parser.add_argument("-a", "--autozyg", dest="autozyg", help="Plot regions of autozygosity from bed file [OPERATION]", metavar="FILE")
     parser.add_argument("-c", "--coverage", dest="coverage_file", help=HELP_STR_COV+" [OPERATION]", metavar="FILE")
     parser.add_argument("-f", "--fracsnp", dest="hozysnp_file", help="Plot fraction of homozygous SNPs from wig file [OPERATION]", metavar="FILE")
