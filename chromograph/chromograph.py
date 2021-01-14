@@ -332,19 +332,10 @@ def plot_ideogram(file_path, *args, **kwargs):
         )
     )
 
-    # try two different chromosome formats, if both result in
-    # an empty dataframe, raise IdeoParseError
-    for chr_name in ["str", "int"]:
-        chromosome_list = get_chromosome_list(chr_name)
-        dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
-        if dataframe.empty:
-            print('Error: {} is empty!'.format(file_path))
-            sys.exit(1)
-        # delete chromosomes not in CHROMOSOMES
-        dataframe = filter_dataframe(dataframe, chromosome_list)
-        if dataframe.size > 0:
-            break
-    if dataframe.size == 0:
+    dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
+    chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
+    dataframe = filter_dataframe(dataframe, chromosome_list)
+    if dataframe.empty():
         raise Exception("Ideogram parsing")
     dataframe["width"] = dataframe.end - dataframe.start
     dataframe["colors"] = dataframe["gStain"].apply(lambda x: get_color[x])
@@ -364,6 +355,15 @@ def get_chromosome_list(kind):
     return CHROMOSOMES
 
 
+def is_chr_str(chrom):
+    """Assume that chromsome in bed/wig files are on format 'chr22' or '22', upon
+    which int or str is returned. """
+    try:
+        int(chrom)
+        return "int"
+    except:
+        return "str"
+
 def plot_autozyg(bed_file, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy"""
     settings = normalize_upd_sites_args(bed_file, args, kwargs)
@@ -377,9 +377,8 @@ def plot_autozyg(bed_file, *args, **kwargs):
         print('Error: {} is empty!'.format(bed_file))
         sys.exit(1)
 
-    print(parse_bed(bed_file))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
-    chromosome_list = get_chromosome_list("int")
+    chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -425,8 +424,7 @@ def plot_upd_sites(filepath, *args, **kwargs):
         sys.exit(1)
     print(parse_bed(filepath))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
-    # chromosome_list = get_chromosome_list(parse_bed(filepath))
-    chromosome_list = get_chromosome_list("int")
+    chromosome_list = get_chromosome_list(get_chromosome_list(is_chr_str(dataframe.chrom[0])))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
