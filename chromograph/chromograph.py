@@ -335,7 +335,7 @@ def plot_ideogram(file_path, *args, **kwargs):
     dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(dataframe, chromosome_list)
-    if dataframe.empty():
+    if dataframe.empty:
         raise Exception("Ideogram parsing")
     dataframe["width"] = dataframe.end - dataframe.start
     dataframe["colors"] = dataframe["gStain"].apply(lambda x: get_color[x])
