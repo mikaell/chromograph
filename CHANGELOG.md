@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [1.0.2]
+### Fixed
+-Better check for 37 vs 38 name convention
+-Handle empty string in parsing
+-Check for empty dataframe
+
 ### [1.0.1]
 ### Fixed
 -Don't crash on empty BED file
