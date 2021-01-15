@@ -335,7 +335,7 @@ def plot_ideogram(file_path, *args, **kwargs):
     dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(dataframe, chromosome_list)
-    if dataframe.size == 0:
+    if dataframe.empty():
         raise Exception("Ideogram parsing")
     dataframe["width"] = dataframe.end - dataframe.start
     dataframe["colors"] = dataframe["gStain"].apply(lambda x: get_color[x])
@@ -377,18 +377,11 @@ def plot_autozyg(bed_file, *args, **kwargs):
         print('Error: {} is empty!'.format(bed_file))
         sys.exit(1)
 
-    print(parse_bed(bed_file))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
-    print("= = =")
-    print(dataframe.chrom[0])
-    
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
-    print(dataframe)
-    print("* * * ")
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
-    print(dataframe)
     dataframe["width"] = (dataframe.end - dataframe.start) + PADDING
     dataframe["colors"] = get_color["PB_HOMOZYGOUS"]
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
@@ -588,7 +581,7 @@ def regions_to_hbar(region_list_chr):
        transperant middle line for aestetics."""
     return_list = []
     for i in region_list_chr:
-        hbar_upper = BrokenBarHCollection(i["xranges"], (0.52, 1), facecolors=i["upper"], label=i["chr"], hatch="\\")
+        hbar_upper = BrokenBarHCollection(i["xranges"], (0.52, 1), facecolors=i["upper"], label=i["chr"])
         hbar_lower = BrokenBarHCollection(i["xranges"], (0, 0.48), facecolors=i["lower"], label=i["chr"])
         return_list.append([hbar_upper, hbar_lower])
     return return_list
