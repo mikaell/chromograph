@@ -546,7 +546,8 @@ def plot_upd_regions(file, *args, **kwargs):
     )
     with open(file) as filepointer:
         for line in filepointer:
-            read_line.append(parse_upd_regions(line))
+            if not line:        # don't parse empty strings
+                read_line.append(parse_upd_regions(line))
     region_list = [region_to_dict(i) for i in read_line]
     region_list_chr = compile_per_chrom(region_list)
     hbar_list = regions_to_hbar(region_list_chr)
