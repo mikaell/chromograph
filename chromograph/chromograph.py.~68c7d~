@@ -110,7 +110,7 @@ get_color = {
     "UPD_PATERNAL_ORIGIN": "#0044ff",  # Blue
     # UPD region colors
     "HETERODISOMY/DELETION": "#BDB76B", # Dark khaki
-    "ISODISOMY/DELETION": "#FFE4B5",   # Moccasin
+    "HOMODISOMY/DELETION": "#FFE4B5",   # Moccasin
     "MATERNAL": "#aa2200",
     "PATERNAL": "#0044ff",  # Blue
     # Heterodisomy colors
@@ -335,7 +335,7 @@ def plot_ideogram(file_path, *args, **kwargs):
     dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(dataframe, chromosome_list)
-    if dataframe.empty:
+    if dataframe.empty():
         raise Exception("Ideogram parsing")
     dataframe["width"] = dataframe.end - dataframe.start
     dataframe["colors"] = dataframe["gStain"].apply(lambda x: get_color[x])
@@ -538,6 +538,7 @@ def plot_upd_regions(file, *args, **kwargs):
     # Parse sites upd file to brokenbarcollection
     read_line = []
     settings = normalize_args(file, args, kwargs)
+
     print(
         "Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
             settings["outd"], settings["euploid"]
@@ -545,8 +546,7 @@ def plot_upd_regions(file, *args, **kwargs):
     )
     with open(file) as filepointer:
         for line in filepointer:
-            if len(line.strip()) > 0:        # don't parse empty strings
-                read_line.append(parse_upd_regions(line))
+            read_line.append(parse_upd_regions(line))
     region_list = [region_to_dict(i) for i in read_line]
     region_list_chr = compile_per_chrom(region_list)
     hbar_list = regions_to_hbar(region_list_chr)
@@ -638,9 +638,7 @@ def get_tint_color(disomy_type, parent):
     if disomy_type == "heterodisomy":
         return get_color[parent+"_LIGHT"]
     if disomy_type == "homodisomy/deletion":
-        return get_color["ISODISOMY/DELETION"]
-    if disomy_type == "isodisomy/deletion":
-        return get_color["ISODISOMY/DELETION"]
+        return get_color["HOMODISOMY/DELETION"]
     if disomy_type == "heterodisomy/deletion":
         return get_color["HETERODISOMY/DELETION"]
     return get_color[parent]
