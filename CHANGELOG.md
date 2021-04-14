@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+### [1.1]
+### Added
+-Test files of every supported type
+## Changed
+-Isodisomy to replace homodisomy in code, backwards compatible
+### Fixed
+-Bugi fixed when parsing UPD regions
+
 ### [1.0.2]
 ### Fixed
 -Better check for 37 vs 38 name convention
