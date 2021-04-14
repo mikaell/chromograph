@@ -538,7 +538,6 @@ def plot_upd_regions(file, *args, **kwargs):
     # Parse sites upd file to brokenbarcollection
     read_line = []
     settings = normalize_args(file, args, kwargs)
-
     print(
         "Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
             settings["outd"], settings["euploid"]
@@ -546,7 +545,7 @@ def plot_upd_regions(file, *args, **kwargs):
     )
     with open(file) as filepointer:
         for line in filepointer:
-            if not line:        # don't parse empty strings
+            if len(line.strip()) > 0:        # don't parse empty strings
                 read_line.append(parse_upd_regions(line))
     region_list = [region_to_dict(i) for i in read_line]
     region_list_chr = compile_per_chrom(region_list)
