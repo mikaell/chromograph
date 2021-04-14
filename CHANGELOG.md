@@ -8,7 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## Changed
 -Isodisomy to replace homodisomy in code, backwards compatible
 ### Fixed
--Bugi fixed when parsing UPD regions
+-Bug fixed when parsing UPD regions
+-Delete tmp files added to repo by mistake
 
 ### [1.0.2]
 ### Fixed
