@@ -3,7 +3,7 @@ import os
 import unittest.mock as mock
 from unittest.mock import mock_open
 import pandas as pd
-from chromograph.chr_utils import (chr_type_format, cast, read_cfg, filter_dataframe,
+from chromograph.chr_utils import (chr_type_format, cast, filter_dataframe,
                                    png_filename, outpath, parse_wig_declaration,
                                    make_dict)
 
