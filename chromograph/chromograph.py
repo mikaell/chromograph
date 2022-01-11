@@ -32,7 +32,7 @@ from .chr_utils import (
 )
 
 matplotlib.use("Agg")
-mpl.rcParams['agg.path.chunksize'] = 10000
+matplotlib.rcParams['agg.path.chunksize'] = 10000
 
 
 # TODO: instead of padding look-ahead and contsrict if overlap
