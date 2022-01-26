@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.3]
+### [Changed]
+- Exit(0) instead of exit(1) when empty bedfile given as input
+
 ## [1.1.2]
 ### [Fixed]
 - Typo bug

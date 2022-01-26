@@ -376,8 +376,8 @@ def plot_autozyg(bed_file, *args, **kwargs):
     )
     dataframe = bed_to_dataframe(bed_file, ROH_BED_FORMAT)
     if dataframe.empty:
-        print('Error: {} is empty!'.format(bed_file))
-        sys.exit(1)
+        print('Warning: No bed data found: {}!'.format(bed_file))
+        sys.exit(0)
 
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
@@ -422,8 +422,8 @@ def plot_upd_sites(filepath, *args, **kwargs):
     )
     dataframe = bed_to_dataframe(filepath, UPD_FORMAT)
     if dataframe.empty:
-        print('Error: {} is empty!'.format(filepath))
-        sys.exit(1)
+        print('Warning: No bed data found: {}!'.format(bed_file))
+        sys.exit(0)
     print(parse_bed(filepath))
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
     chromosome_list = get_chromosome_list(get_chromosome_list(is_chr_str(dataframe.chrom[0])))
