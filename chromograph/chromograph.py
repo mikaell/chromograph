@@ -32,7 +32,7 @@ from .chr_utils import (
 )
 
 matplotlib.use("Agg")
-matplotlib.rcParams['agg.path.chunksize'] = 10000
+
 
 
 # TODO: instead of padding look-ahead and contsrict if overlap
@@ -91,7 +91,10 @@ CHROMOSOMES = [
     "Y",
 ]
 
-DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False}
+DEFAULT_SETTING = {"combine": False,
+                   "normalize": False,
+                   "euploid": False,
+                   "agg_chunk_size": 10000}
 
 get_color = {
     # Cytoband colors
@@ -713,6 +716,7 @@ def main():
     parser.add_argument("-s", "--sites", dest="upd_sites", help=HELP_STR_UPD_SITE.format(UPD_FORMAT)+" [OPERATION]", metavar="FILE"    )
 
     parser.add_argument("--step", type=int, help="fixed step size (default 5000)")
+    parser.add_argument("-u", "--chunk", type=int, help="Set Matplotlib.agg.path.chunksize (default 10000)")
     parser.add_argument("--version", help=HELP_STR_VSN.format(__version__),action="version", version="chromograph {}".format(__version__) )
     parser.add_argument("-d", "--outd", dest="outd", help="output dir", metavar="FILE")
     parser.add_argument("-e", "--euploid", help= HELP_STR_EU, action="store_true")
@@ -728,6 +732,8 @@ def main():
     args.combine = "combine" if args.combine else None
     args.euploid = "euploid" if args.euploid else None
 
+    agg_chunks_size = args.chunk if args.chunk else DEFAULT_SETTING["agg_chunk_size"]
+    matplotlib.rcParams['agg.path.chunksize'] = agg_chunks_size
 
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)

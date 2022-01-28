@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.4]
+### [Added]
+- Add option `--chunk / -u` to set Matplotlib chunk size from commandline
+
 ## [1.1.3]
 ### [Changed]
 - Exit(0) instead of exit(1) when empty bedfile given as input
