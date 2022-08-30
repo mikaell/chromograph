@@ -190,7 +190,7 @@ def area_graph_generator(dataframe, x_axis, y_axis):
         dict -- {'label', 'x', 'y'}
     """
     for chrom, group in dataframe.groupby("chrom"):
-        yield {"label": chrom, "x": group[x_axis].values, "y": group[y_axis].values}
+        yield {"label": chrom, "x": group[x_axis].values, "y": group[y_axis].values, "bar_width":group["bar_width"].values}
 
 
 def area_graph_generator_combine(dataframe, height):
@@ -222,12 +222,6 @@ def exom_coverage_generator(dataframe, data_state):
     Yeilds:
         dict -- {'label', 'x', 'y'}
     """
-
-    #        chrom      start        end                     F3                      F4           F5             F6  readCount  meanCoverage  percentage10  percentage15  percentage20  percentage50  percentage100 sampleName
-    # 0         13   22255179   22255286   13-22255181-22255284               NM_002010         3687           FGF9        191    116.215000         100.0         100.0         100.0      100.0000        92.5234  ADM1600A1
-    # 1          1  154306977  154307069  1-154306979-154307067  NM_001005855,NM_020452  13534,13534  ATP8B2,ATP8B2          0      0.000000           0.0           0.0           0.0        0.0000         0.0000  ADM1600A1
-    # 2          6   20739748   20739848    6-20739750-20739846  NM_017774,XM_005249202  21050,21050  CDKAL1,CDKAL1          1      0.710000           0.0           0.0           0.0        0.0000         0.0000  ADM1600A1
-    # 3          2  228169699  228169801  2-228169701-228169799               NM_000091         2204         COL4A3        206    112.980000         100.0         100.0         100.0      100.0000       100.0000  ADM1600A1
     for chrom, group in dataframe.groupby("chrom"):
         yield {"label": chrom, "x": group["pos"].values, "y": group[meanCoverage].values}
 
@@ -487,9 +481,9 @@ def plot_upd_sites(filepath, *args, **kwargs):
 def plot_exom_coverage(file_path, *args, **kwargs):
     """Plot exom coverage from bed file. Format:"""
     settings = read_settings(file_path, args, kwargs)
-    ylim_height = 75
+    ylim_height = 13
     x_axis = "start"
-    y_axis = "meanCoverage"
+    y_axis = "norm_coverage"
 
     print(
         "Plot Exom coverage with settings\ncombine:{}\neuploid:{}".format(
@@ -507,11 +501,12 @@ def plot_exom_coverage(file_path, *args, **kwargs):
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
-    dataframe["pos"] = (dataframe.end - dataframe.start) + PADDING
+    dataframe["bar_width"] = (dataframe.end - dataframe.start) + 400000
+    dataframe["norm_coverage"] = (dataframe.meanCoverage / dataframe.meanCoverage.mean()).round(0)
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
-    print(dataframe)
+    print("-----------------")
 
-    print_area_graph(
+    print_bar_chart(
         dataframe,
         file_path,
         settings["outd"],
@@ -581,7 +576,7 @@ def plot_wig(file_path, ylim_height, *args, **kwargs):
     )
 
 
-def print_area_graph(dataframe, file, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
     """Print an area graph as PNG file. Used to print picture of coverage"""
 
     print("= = =")
@@ -598,9 +593,9 @@ def print_area_graph(dataframe, file, outd, combine, x_axis, y_axis, color, eupl
             axis.set_ylim(bottom=0)
             axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             fig.tight_layout()
-            outfile = outpath(outd, file, chrom_data["label"])
+            outfile = outpath(outd, file_path, chrom_data["label"])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
@@ -610,6 +605,33 @@ def print_area_graph(dataframe, file, outd, combine, x_axis, y_axis, color, eupl
         print("WARNING: Combined area graphs are not implemented!")
         False
 
+
+def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+    """Print vertical bar chart"""
+    # plot
+    # fig, ax = plt.subplots()
+    # ax.bar(x, y, width=1, edgecolor="white", linewidth=0.7)
+    # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
+    #        ylim=(0, 8), yticks=np.arange(1, 8))
+    # plt.show()
+    print('???')
+    is_printed = []
+    for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
+        fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
+        common_settings(axis)
+        axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
+        plt.ylim(0, ylim_height)
+        print('1.')
+        axis.set_ylim(bottom=0)
+        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+        fig.tight_layout()
+        outfile = outpath(outd, file_path, chrom_data["label"])
+        print("outfile: {}".format(outfile))
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        is_printed.append(chrom_data["label"])
+        plt.close(fig)  # save memory
+    if euploid:
+        print_empty_pngs(file_path, outd, is_printed)
 
 def plot_upd_regions(file, *args, **kwargs):
     """Print region as PNG file
@@ -752,6 +774,7 @@ def normalize_wig_args(header, filepath, args, kwargs):
     return settings
 
 
+# TODO: refactor read_settings() and normalize_args()
 def read_settings(filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict
     for upd sites"""
