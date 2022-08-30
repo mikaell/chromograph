@@ -142,14 +142,8 @@ get_color = {
 }
 
 
-def assure_dir(outd):
-    """Create directory 'outd' if it does not exist"""
-    print("outd: {}".format(outd))
-    if not os.path.exists(outd):
-        os.makedirs(outd)
-
-
-# Horizontal bar
+## MatPlotLib: Functions to yield input for MatPlotLib
+## ---------------------------------------------------
 def horizontal_bar_generator_combine(dataframe, y_positions, height):
     """Iterate dataframe
 
@@ -189,67 +183,196 @@ def area_graph_generator(dataframe, x_axis, y_axis):
         dict -- {'label', 'x', 'y'}
     """
     for chrom, group in dataframe.groupby("chrom"):
-        yield {"label": chrom, "x": group[x_axis].values, "y": group[y_axis].values, "bar_width":group["bar_width"].values}
+        yield {
+            "label": chrom,
+            "x": group[x_axis].values,
+            "y": group[y_axis].values,
+            "bar_width": group["bar_width"].values,
+        }
 
 
 def area_graph_generator_combine(dataframe, height):
-    """Iterate dataframe and yeild per chromosome, like coverage_generator()
-    -with additional positional
-
-    Args:
-        dataframe --
-        height ---
-
-    Yeilds:
-        BrokenBarhcollection
-    """
     # TODO: combining area graphs into one png is not implemented
-
-    for chrom, group in dataframe.groupby("chrom"):
-        yrange = (0, height)
-        xranges = group[["start", "width"]].values
-        yield BrokenBarHCollection(xranges, yrange, facecolors=group["colors"], label=chrom)
+    yield False
 
 
 def exom_coverage_generator(dataframe, data_state):
-    """Iterate dataframe and yeild exom coverage
-
-    Args:
-        df(dataframe)
-        data_state('coverage'|'normalized_coverage')
-
-    Yeilds:
-        dict -- {'label', 'x', 'y'}
-    """
-
-    #        chrom      start        end                     F3                      F4           F5             F6  readCount  meanCoverage  percentage10  percentage15  percentage20  percentage50  percentage100 sampleName
-    # 0         13   22255179   22255286   13-22255181-22255284               NM_002010         3687           FGF9        191    116.215000         100.0         100.0         100.0      100.0000        92.5234  ADM1600A1
-    # 1          1  154306977  154307069  1-154306979-154307067  NM_001005855,NM_020452  13534,13534  ATP8B2,ATP8B2          0      0.000000           0.0           0.0           0.0        0.0000         0.0000  ADM1600A1
-    # 2          6   20739748   20739848    6-20739750-20739846  NM_017774,XM_005249202  21050,21050  CDKAL1,CDKAL1          1      0.710000           0.0           0.0           0.0        0.0000         0.0000  ADM1600A1
-    # 3          2  228169699  228169801  2-228169701-228169799               NM_000091         2204         COL4A3        206    112.980000         100.0         100.0         100.0      100.0000       100.0000  ADM1600A1
+    """Iterate dataframe and yeild exom coverage"""
     for chrom, group in dataframe.groupby("chrom"):
         yield {"label": chrom, "x": group["pos"].values, "y": group[meanCoverage].values}
 
 
-def common_settings(axis):
+
+
+## Library functions
+## -----------------
+def _assure_dir(outd):
+    """Create directory 'outd' if it does not exist"""
+    print("outd: {}".format(outd))
+    if not os.path.exists(outd):
+        os.makedirs(outd)
+
+
+def _common_settings(axis):
     """Common Matplotlib settings to remove visible axis"""
     axis.get_xaxis().set_visible(False)
     axis.get_yaxis().set_visible(False)
     axis.set_axis_off()  # Remove black line surrounding pic.
 
+def get_chromosome_list(kind):
+    """Return list of chromsome names, on format '12' or 'chr12'"""
+    if kind == "str":
+        return ["chr" + chr for chr in CHROMOSOMES]
+    return CHROMOSOMES
 
+
+def is_chr_str(chrom):
+    """Assume that chromsome in bed/wig files are on format 'chr22' or '22', upon
+    which int or str is returned."""
+    try:
+        int(chrom)
+        return "int"
+    except:
+        return "str"
+
+
+def bed_to_dataframe(file, spec):
+    """Read a bed file into a Pandas dataframe according to 'spec'"""
+    return pandas.read_csv(file, names=spec, sep="\t", skiprows=1)
+
+    
+def get_tint_color(disomy_type, parent):
+    """If heterodisomy return a lighter color"""
+    if disomy_type == "heterodisomy":
+        return get_color[parent + "_LIGHT"]
+    if disomy_type == "homodisomy/deletion":
+        return get_color["ISODISOMY/DELETION"]
+    if disomy_type == "isodisomy/deletion":
+        return get_color["ISODISOMY/DELETION"]
+    if disomy_type == "heterodisomy/deletion":
+        return get_color["HETERODISOMY/DELETION"]
+    return get_color[parent]
+
+
+def args_to_dict(filepath, args, kwargs):
+    """Handle command line arguments and settings. Return a dict of 
+    args set to default if not given. """
+    settings = DEFAULT_SETTING
+    settings["outd"] = os.path.dirname(filepath)
+
+    if "combine" in args:
+        settings["combine"] = True
+    if "norm" in args:
+        settings["normalize"] = True
+    if "euploid" in args:
+        settings["euploid"] = True
+    if "outd" in kwargs and kwargs["outd"] is not None:
+        print("output directory:{}".format(kwargs["outd"]))
+        _assure_dir(kwargs["outd"])
+        settings["outd"] = kwargs["outd"]
+    return settings
+
+
+def wig_args_to_dict(header, filepath, args, kwargs):
+    """Override default settings if argument is given, return settings dict for coverage/wig"""
+    settings = args_to_dict(file, args, kwargs)
+    settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
+    settings["fixedStep"] = header["step"]
+    if "rgb" in kwargs and kwargs["rgb"] is not None:
+        settings["color"] = rgb_str(kwargs["rgb"])
+    if "step" in kwargs and kwargs["step"] is not None:
+        settings["fixedStep"] = kwargs["step"]
+    return settings
+
+
+def rgb_str(color):
+    """Return #color"""
+    head, *_tail = str(color)
+    if head == "#":
+        return color  # color was alread on format "#123456"
+    return "#" + str(color)
+
+def regions_to_hbar(region_list_chr):
+    """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
+    Isodisomy will have one block and one color. Heterodisomy will
+    be two adjecent bars with two colors. Both plots will have a
+    transperant middle line for aestetics."""
+    return_list = []
+    for i in region_list_chr:
+        hbar_upper = BrokenBarHCollection(
+            i["xranges"], (0.52, 1), facecolors=i["upper"], label=i["chr"]
+        )
+        hbar_lower = BrokenBarHCollection(
+            i["xranges"], (0, 0.48), facecolors=i["lower"], label=i["chr"]
+        )
+        return_list.append([hbar_upper, hbar_lower])
+    return return_list
+
+
+def region_to_dict(region):
+    start = int(region["start"])
+    width = int(region["stop"]) - int(region["start"])
+    xranges = (start, width)
+    disomy_type = region["desc"]["type"].lower()
+    origin = region["desc"]["origin"]
+    color = get_color[origin]
+    upper_color = get_tint_color(disomy_type, origin)
+
+    hbar_upper = {"xranges": xranges, "facecolors": upper_color, "label": region["chr"]}
+    hbar_lower = {"xranges": xranges, "facecolors": color, "label": region["chr"]}
+
+    return {
+        "chr": region["chr"],
+        "xranges": xranges,
+        "hbar_lower": color,
+        "hbar_upper": upper_color,
+    }
+
+
+def compile_per_chrom(hbar_list):
+    """Return [{chr: upper: lower:}]"""
+    if hbar_list == []:
+        return []
+
+    mylist = []
+    comp = {"chr": None, "xranges": [], "upper": [], "lower": []}
+    mylist.append(comp)
+
+    for i in hbar_list:
+        # same chromosome, add to lists
+        if mylist[-1]["chr"] is None:
+            mylist[-1]["chr"] = i["chr"]
+            mylist[-1]["xranges"].append(i["xranges"])
+            mylist[-1]["upper"].append(i["hbar_upper"])
+            mylist[-1]["lower"].append(i["hbar_lower"])
+        elif mylist[-1]["chr"] == i["chr"]:
+            mylist[-1]["xranges"].append(i["xranges"])
+            mylist[-1]["upper"].append(i["hbar_upper"])
+            mylist[-1]["lower"].append(i["hbar_lower"])
+        else:
+            mylist.append(
+                {
+                    "chr": i["chr"],
+                    "xranges": [i["xranges"]],
+                    "upper": [i["hbar_upper"]],
+                    "lower": [i["hbar_lower"]],
+                }
+            )
+    return mylist
+
+
+## Functions to create PNGS
+## ------------------------
+# rename print_broken_horizontal_bar
 def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
     """Print one chromosomes per image file"""
     fig = plt.figure(figsize=(10, 0.5))
     axis = fig.add_subplot(111)
     plt.rcParams.update({"figure.max_open_warning": 0})
-    print("* * *")
-    print(dataframe)
-
     is_printed = []
     for collection in horizontal_bar_generator(dataframe, HEIGHT):
         axis.add_collection(collection)
-        common_settings(axis)
+        _common_settings(axis)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
@@ -275,13 +398,12 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
 
 
-def print_empty_pngs(file, outd, is_printed):
+def print_empty_pngs(file_path, outd, is_printed):
     """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
 
     gene_build = chr_type_format(is_printed[0])
-
     for chrom in CHROMOSOMES:
         if chrom in is_printed:
             continue
@@ -289,18 +411,66 @@ def print_empty_pngs(file, outd, is_printed):
             continue
 
         prefix = "chr" if gene_build == "str" else ""
-        outfile = outpath(outd, file, prefix + chrom)
+        outfile = outpath(outd, file_path, prefix + chrom)
         print("print empty: {}".format(outfile))
         filestream = open(outfile, "bw")
         filestream.write(PNG_BYTES)
         filestream.close()
 
 
-def bed_to_dataframe(file, spec):
-    """Read a bed file into a Pandas dataframe according to 'spec'"""
-    return pandas.read_csv(file, names=spec, sep="\t", skiprows=1)
+def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+    """Print an area graph as PNG file. Used to print picture of coverage"""
+    if not combine:  # Plot one chromosome per png
+        is_printed = []
+        for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
+            fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
+            _common_settings(axis)
+            axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
+            plt.ylim(0, ylim_height)
+            axis.set_ylim(bottom=0)
+            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+            fig.tight_layout()
+            outfile = outpath(outd, file_path, chrom_data["label"])
+            print("outfile: {}".format(outfile))
+            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
+            is_printed.append(chrom_data["label"])
+            plt.close(fig)  # save memory
+        if euploid:
+            print_empty_pngs(file_path, outd, is_printed)
+    else:
+        print("WARNING: Combined area graphs are not implemented!")
+        False
 
 
+def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+    """Print vertical bar chart"""
+    is_printed = []
+    for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
+        fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
+        _common_settings(axis)
+        axis.bar(
+            chrom_data["x"],
+            chrom_data["y"],
+            width=chrom_data["bar_width"],
+            color=color,
+            linewidth=0,
+        )
+        plt.ylim(0, ylim_height)
+        print("1.")
+        axis.set_ylim(bottom=0)
+        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+        fig.tight_layout()
+        outfile = outpath(outd, file_path, chrom_data["label"])
+        print("outfile: {}".format(outfile))
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        is_printed.append(chrom_data["label"])
+        plt.close(fig)  # save memory
+    if euploid:
+        print_empty_pngs(file_path, outd, is_printed)
+
+
+
+        
 def wig_to_dataframe(infile, step, col_format):
     """Read a wig file into a Pandas dataframe.  Returns:  Dataframe"""
     filestream = open(infile, "r")
@@ -329,8 +499,6 @@ def wig_to_dataframe(infile, step, col_format):
                 pos = 0
     filestream.close()
     dataframe = pandas.DataFrame(coverage_data, columns=col_format)
-    print("WIG")
-    print(dataframe)
     return dataframe
 
 
@@ -367,7 +535,7 @@ def plot_ideogram(file_path, *args, **kwargs):
     Returns:
           None
     """
-    settings = normalize_args(file_path, args, kwargs)
+    settings = args_to_dict(file_path, args, kwargs)
     print(
         "Plot ideograms with settings\ncombine:{}\noutd:{}".format(
             settings["combine"], settings["outd"]
@@ -390,26 +558,9 @@ def plot_ideogram(file_path, *args, **kwargs):
         print_individual_pics(dataframe, file_path, settings["outd"], settings["euploid"])
 
 
-def get_chromosome_list(kind):
-    """Return list of chromsome names, on format '12' or 'chr12'"""
-    if kind == "str":
-        return ["chr" + chr for chr in CHROMOSOMES]
-    return CHROMOSOMES
-
-
-def is_chr_str(chrom):
-    """Assume that chromsome in bed/wig files are on format 'chr22' or '22', upon
-    which int or str is returned."""
-    try:
-        int(chrom)
-        return "int"
-    except:
-        return "str"
-
-
-def plot_autozyg(bed_file, *args, **kwargs):
+def plot_autozyg(file_path, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy"""
-    settings = read_settings(bed_file, args, kwargs)
+    settings = args_to_dict(file_path, args, kwargs)
     print(
         "Plot RoH Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
@@ -456,7 +607,7 @@ def plot_upd_sites(filepath, *args, **kwargs):
     Returns: None
 
     """
-    settings = read_settings(filepath, args, kwargs)
+    settings = args_to_dict(file_path, args, kwargs)
     print(
         "Plot UPD Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
@@ -530,7 +681,7 @@ def plot_coverage_wig(filepath, *args, **kwargs):
     ylim_height = 75
     if "rgb" in kwargs and kwargs["rgb"] is None:
         kwargs["rgb"] = WIG_ORANGE
-    plot_wig(filepath, ylim_height, *args, **kwargs)
+    plot_wig_aux(filepath, ylim_height, *args, **kwargs)
 
 
 def plot_homosnp_wig(filepath, *args, **kwargs):
@@ -538,13 +689,13 @@ def plot_homosnp_wig(filepath, *args, **kwargs):
     ylim_height = 1
     if "rgb" in kwargs and kwargs["rgb"] is None:
         kwargs["rgb"] = "#A98200"  # Dark Goldenrod
-    plot_wig(filepath, ylim_height, *args, **kwargs)
+    plot_wig_aux(filepath, ylim_height, *args, **kwargs)
 
 
-def plot_wig(file_path, ylim_height, *args, **kwargs):
+def plot_wig_aux(file_path, ylim_height, *args, **kwargs):
     """Outputs png:s of data given on WIG format."""
     header = parse_wig_declaration(file_path)
-    settings = normalize_wig_args(header, file_path, args, kwargs)
+    settings = wig_args_to_dict(header, file_path, args, kwargs)
 
     print(
         "Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}\neuploid:{}".format(
@@ -581,62 +732,6 @@ def plot_wig(file_path, ylim_height, *args, **kwargs):
     )
 
 
-def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
-    """Print an area graph as PNG file. Used to print picture of coverage"""
-
-    print("= = =")
-    print(dataframe)
-    print(y_axis)
-
-    if not combine:  # Plot one chromosome per png
-        is_printed = []
-        for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
-            fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-            common_settings(axis)
-            axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, ylim_height)
-            axis.set_ylim(bottom=0)
-            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
-            fig.tight_layout()
-            outfile = outpath(outd, file_path, chrom_data["label"])
-            print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
-            is_printed.append(chrom_data["label"])
-            plt.close(fig)  # save memory
-        if euploid:
-            print_empty_pngs(file_path, outd, is_printed)
-    else:
-        # TODO:
-        print("WARNING: Combined area graphs are not implemented!")
-        False
-
-
-def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
-    """Print vertical bar chart"""
-    # plot
-    # fig, ax = plt.subplots()
-    # ax.bar(x, y, width=1, edgecolor="white", linewidth=0.7)
-    # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
-    #        ylim=(0, 8), yticks=np.arange(1, 8))
-    # plt.show()
-    print('???')
-    is_printed = []
-    for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
-        fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-        common_settings(axis)
-        axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
-        plt.ylim(0, ylim_height)
-        print('1.')
-        axis.set_ylim(bottom=0)
-        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
-        fig.tight_layout()
-        outfile = outpath(outd, file_path, chrom_data["label"])
-        print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
-        is_printed.append(chrom_data["label"])
-        plt.close(fig)  # save memory
-    if euploid:
-        print_empty_pngs(file_path, outd, is_printed)
 
 def plot_upd_regions(file, *args, **kwargs):
     """Print region as PNG file
@@ -647,7 +742,7 @@ def plot_upd_regions(file, *args, **kwargs):
 
     # Parse sites upd file to brokenbarcollection
     read_line = []
-    settings = normalize_args(file, args, kwargs)
+    settings = args_to_dict(file, args, kwargs)
     print(
         "Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
             settings["outd"], settings["euploid"]
@@ -669,7 +764,7 @@ def plot_upd_regions(file, *args, **kwargs):
     for bars in hbar_list:
         for bar in bars:
             x_axis.add_collection(bar)
-            common_settings(x_axis)
+            _common_settings(x_axis)
             x_axis.set_xlim(0, CHROM_END_POS)  # try to mimic nice bounds
             outfile = outpath(settings["outd"], file, bar.get_label())
             is_printed.append(bar.get_label())
@@ -685,134 +780,6 @@ def plot_upd_regions(file, *args, **kwargs):
         print_empty_pngs(file, settings["outd"], is_printed)
 
 
-def regions_to_hbar(region_list_chr):
-    """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
-    Isodisomy will have one block and one color. Heterodisomy will
-    be two adjecent bars with two colors. Both plots will have a
-    transperant middle line for aestetics."""
-    return_list = []
-    for i in region_list_chr:
-        hbar_upper = BrokenBarHCollection(
-            i["xranges"], (0.52, 1), facecolors=i["upper"], label=i["chr"]
-        )
-        hbar_lower = BrokenBarHCollection(
-            i["xranges"], (0, 0.48), facecolors=i["lower"], label=i["chr"]
-        )
-        return_list.append([hbar_upper, hbar_lower])
-    return return_list
-
-
-def region_to_dict(region):
-    start = int(region["start"])
-    width = int(region["stop"]) - int(region["start"])
-    xranges = (start, width)
-    disomy_type = region["desc"]["type"].lower()
-    origin = region["desc"]["origin"]
-    color = get_color[origin]
-    upper_color = get_tint_color(disomy_type, origin)
-
-    hbar_upper = {"xranges": xranges, "facecolors": upper_color, "label": region["chr"]}
-    hbar_lower = {"xranges": xranges, "facecolors": color, "label": region["chr"]}
-
-    return {
-        "chr": region["chr"],
-        "xranges": xranges,
-        "hbar_lower": color,
-        "hbar_upper": upper_color,
-    }
-
-
-def compile_per_chrom(hbar_list):
-    """Return [{chr: upper: lower:}]"""
-    if hbar_list == []:
-        return []
-
-    mylist = []
-    comp = {"chr": None, "xranges": [], "upper": [], "lower": []}
-    mylist.append(comp)
-
-    for i in hbar_list:
-        # same chromosome, add to lists
-        if mylist[-1]["chr"] is None:
-            mylist[-1]["chr"] = i["chr"]
-            mylist[-1]["xranges"].append(i["xranges"])
-            mylist[-1]["upper"].append(i["hbar_upper"])
-            mylist[-1]["lower"].append(i["hbar_lower"])
-        elif mylist[-1]["chr"] == i["chr"]:
-            mylist[-1]["xranges"].append(i["xranges"])
-            mylist[-1]["upper"].append(i["hbar_upper"])
-            mylist[-1]["lower"].append(i["hbar_lower"])
-        else:
-            mylist.append(
-                {
-                    "chr": i["chr"],
-                    "xranges": [i["xranges"]],
-                    "upper": [i["hbar_upper"]],
-                    "lower": [i["hbar_lower"]],
-                }
-            )
-    return mylist
-
-
-def get_tint_color(disomy_type, parent):
-    """If heterodisomy return a lighter color"""
-    if disomy_type == "heterodisomy":
-        return get_color[parent + "_LIGHT"]
-    if disomy_type == "homodisomy/deletion":
-        return get_color["ISODISOMY/DELETION"]
-    if disomy_type == "isodisomy/deletion":
-        return get_color["ISODISOMY/DELETION"]
-    if disomy_type == "heterodisomy/deletion":
-        return get_color["HETERODISOMY/DELETION"]
-    return get_color[parent]
-
-
-def normalize_wig_args(header, filepath, args, kwargs):
-    """Override default settings if argument is given, return settings dict for coverage/wig"""
-    settings = normalize_args(filepath, args, kwargs)
-    settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
-    settings["fixedStep"] = header["step"]
-    if "rgb" in kwargs and kwargs["rgb"] is not None:
-        settings["color"] = rgb_str(kwargs["rgb"])
-    if "step" in kwargs and kwargs["step"] is not None:
-        settings["fixedStep"] = kwargs["step"]
-    return settings
-
-
-# TODO: refactor read_settings() and normalize_args()
-def read_settings(filepath, args, kwargs):
-    """Override default settings if argument is given, return settings dict
-    for upd sites"""
-    settings = normalize_args(filepath, args, kwargs)
-    if "combine" in args:
-        settings["combine"] = True
-    return settings
-
-
-def normalize_args(filepath, args, kwargs):
-    """Return a dict of args set to default if not given"""
-    settings = DEFAULT_SETTING
-    settings["outd"] = os.path.dirname(filepath)
-
-    if "combine" in args:
-        settings["combine"] = True
-    if "norm" in args:
-        settings["normalize"] = True
-    if "euploid" in args:
-        settings["euploid"] = True
-    if "outd" in kwargs and kwargs["outd"] is not None:
-        print("output directory:{}".format(kwargs["outd"]))
-        assure_dir(kwargs["outd"])
-        settings["outd"] = kwargs["outd"]
-    return settings
-
-
-def rgb_str(color):
-    """Return #color"""
-    head, *_tail = str(color)
-    if head == "#":
-        return color  # color was alread on format "#123456"
-    return "#" + str(color)
 
 
 def main():
@@ -928,7 +895,6 @@ def main():
         plot_upd_regions(args.upd_regions, args.euploid, outd=args.outd)
     if len(sys.argv[1:]) == 0:
         parser.print_help()
-        # parser.print_usage() # for just the usage line
         parser.exit()
 
 
