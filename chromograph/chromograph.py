@@ -501,7 +501,7 @@ def plot_exom_coverage(file_path, *args, **kwargs):
     if dataframe.empty:
         print("Warning: No bed data found: {}!".format(file_path))
         sys.exit(0)
-    dataframe.dataframe = dataframe.chrom.astype(str)  # cast chromosome to string (read as int)
+    dataframe.chrom = dataframe.chrom.astype(str)  # cast chromosome to string (read as int)
     chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
