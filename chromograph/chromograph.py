@@ -219,14 +219,14 @@ def _common_settings(axis):
     axis.get_yaxis().set_visible(False)
     axis.set_axis_off()  # Remove black line surrounding pic.
 
-def get_chromosome_list(kind):
+def _get_chromosome_list(kind):
     """Return list of chromsome names, on format '12' or 'chr12'"""
     if kind == "str":
         return ["chr" + chr for chr in CHROMOSOMES]
     return CHROMOSOMES
 
 
-def is_chr_str(chrom):
+def _is_chr_str(chrom):
     """Assume that chromsome in bed/wig files are on format 'chr22' or '22', upon
     which int or str is returned."""
     try:
@@ -236,12 +236,12 @@ def is_chr_str(chrom):
         return "str"
 
 
-def bed_to_dataframe(file, spec):
+def _bed_to_dataframe(file, spec):
     """Read a bed file into a Pandas dataframe according to 'spec'"""
     return pandas.read_csv(file, names=spec, sep="\t", skiprows=1)
 
     
-def get_tint_color(disomy_type, parent):
+def _get_tint_color(disomy_type, parent):
     """If heterodisomy return a lighter color"""
     if disomy_type == "heterodisomy":
         return get_color[parent + "_LIGHT"]
@@ -254,7 +254,7 @@ def get_tint_color(disomy_type, parent):
     return get_color[parent]
 
 
-def args_to_dict(filepath, args, kwargs):
+def _args_to_dict(filepath, args, kwargs):
     """Handle command line arguments and settings. Return a dict of 
     args set to default if not given. """
     settings = DEFAULT_SETTING
@@ -273,19 +273,19 @@ def args_to_dict(filepath, args, kwargs):
     return settings
 
 
-def wig_args_to_dict(header, filepath, args, kwargs):
+def _wig_args_to_dict(header, filepath, args, kwargs):
     """Override default settings if argument is given, return settings dict for coverage/wig"""
-    settings = args_to_dict(file, args, kwargs)
+    settings = _args_to_dict(file, args, kwargs)
     settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
     settings["fixedStep"] = header["step"]
     if "rgb" in kwargs and kwargs["rgb"] is not None:
-        settings["color"] = rgb_str(kwargs["rgb"])
+        settings["color"] = _rgb_str(kwargs["rgb"])
     if "step" in kwargs and kwargs["step"] is not None:
         settings["fixedStep"] = kwargs["step"]
     return settings
 
 
-def rgb_str(color):
+def _rgb_str(color):
     """Return #color"""
     head, *_tail = str(color)
     if head == "#":
@@ -316,7 +316,7 @@ def region_to_dict(region):
     disomy_type = region["desc"]["type"].lower()
     origin = region["desc"]["origin"]
     color = get_color[origin]
-    upper_color = get_tint_color(disomy_type, origin)
+    upper_color = _get_tint_color(disomy_type, origin)
 
     hbar_upper = {"xranges": xranges, "facecolors": upper_color, "label": region["chr"]}
     hbar_lower = {"xranges": xranges, "facecolors": color, "label": region["chr"]}
@@ -535,15 +535,15 @@ def plot_ideogram(file_path, *args, **kwargs):
     Returns:
           None
     """
-    settings = args_to_dict(file_path, args, kwargs)
+    settings = _args_to_dict(file_path, args, kwargs)
     print(
         "Plot ideograms with settings\ncombine:{}\noutd:{}".format(
             settings["combine"], settings["outd"]
         )
     )
 
-    dataframe = bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
-    chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
+    dataframe = _bed_to_dataframe(file_path, IDEOGRAM_FORMAT)
+    chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(dataframe, chromosome_list)
     if dataframe.empty:
         raise Exception("Ideogram parsing")
@@ -560,19 +560,19 @@ def plot_ideogram(file_path, *args, **kwargs):
 
 def plot_autozyg(file_path, *args, **kwargs):
     """Plot ROH file for analysis of isodisomy"""
-    settings = args_to_dict(file_path, args, kwargs)
+    settings = _args_to_dict(file_path, args, kwargs)
     print(
         "Plot RoH Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
         )
     )
-    dataframe = bed_to_dataframe(bed_file, ROH_BED_FORMAT)
+    dataframe = _bed_to_dataframe(bed_file, ROH_BED_FORMAT)
     if dataframe.empty:
         print("Warning: No bed data found: {}!".format(bed_file))
         sys.exit(0)
 
     dataframe.chrom = dataframe.chrom.astype(str)  # Explicitly set chrom to string (read as int)
-    chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
+    chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -607,19 +607,19 @@ def plot_upd_sites(filepath, *args, **kwargs):
     Returns: None
 
     """
-    settings = args_to_dict(file_path, args, kwargs)
+    settings = _args_to_dict(file_path, args, kwargs)
     print(
         "Plot UPD Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
         )
     )
-    dataframe = bed_to_dataframe(filepath, UPD_FORMAT)
+    dataframe = _bed_to_dataframe(filepath, UPD_FORMAT)
     if dataframe.empty:
         print("Warning: No bed data found: {}!".format(bed_file))
         sys.exit(0)
     print(parse_bed(filepath))
     dataframe.chrom = dataframe.chrom.astype(str)  # cast chromosome to string (read as int)
-    chromosome_list = get_chromosome_list(get_chromosome_list(is_chr_str(dataframe.chrom[0])))
+    chromosome_list = _get_chromosome_list(_get_chromosome_list(_is_chr_str(dataframe.chrom[0])))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -646,14 +646,14 @@ def plot_exom_coverage(file_path, *args, **kwargs):
             settings["combine"], settings["euploid"]
         )
     )
-    dataframe = bed_to_dataframe(file_path, EXOM_FORMAT)
+    dataframe = _bed_to_dataframe(file_path, EXOM_FORMAT)
     print("UNTOUCHED")
     print(dataframe)
     if dataframe.empty:
         print("Warning: No bed data found: {}!".format(file_path))
         sys.exit(0)
     dataframe.chrom = dataframe.chrom.astype(str)  # cast chromosome to string (read as int)
-    chromosome_list = get_chromosome_list(is_chr_str(dataframe.chrom[0]))
+    chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
     dataframe = filter_dataframe(
         dataframe, chromosome_list
     )  # delete chromosomes not in CHROMOSOME_LIST_UPD
@@ -695,7 +695,7 @@ def plot_homosnp_wig(filepath, *args, **kwargs):
 def plot_wig_aux(file_path, ylim_height, *args, **kwargs):
     """Outputs png:s of data given on WIG format."""
     header = parse_wig_declaration(file_path)
-    settings = wig_args_to_dict(header, file_path, args, kwargs)
+    settings = _wig_args_to_dict(header, file_path, args, kwargs)
 
     print(
         "Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}\neuploid:{}".format(
@@ -707,7 +707,7 @@ def plot_wig_aux(file_path, ylim_height, *args, **kwargs):
         )
     )
 
-    chromosome_list = get_chromosome_list(header["chrom"])
+    chromosome_list = _get_chromosome_list(header["chrom"])
     dataframe = wig_to_dataframe(file_path, settings["fixedStep"], WIG_FORMAT)
     dataframe = filter_dataframe(
         dataframe, chromosome_list
@@ -742,7 +742,7 @@ def plot_upd_regions(file, *args, **kwargs):
 
     # Parse sites upd file to brokenbarcollection
     read_line = []
-    settings = args_to_dict(file, args, kwargs)
+    settings = _args_to_dict(file, args, kwargs)
     print(
         "Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
             settings["outd"], settings["euploid"]
