@@ -81,7 +81,7 @@ EXOM_FORMAT = [
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
-PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+EMPTY_PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
 CHROMOSOMES = [
     "1",
     "2",
@@ -142,9 +142,15 @@ get_color = {
 }
 
 
+
+
+# TODO: skapa pytest med md5-sum för att automatisera körningar
+
+
 ## MatPlotLib: Functions to yield input for MatPlotLib
 ## ---------------------------------------------------
-def horizontal_bar_generator_combine(dataframe, y_positions, height):
+
+def horizontal_bar_generator_combine(dataframe, y_positions):
     """Iterate dataframe
 
     Args:
@@ -156,18 +162,18 @@ def horizontal_bar_generator_combine(dataframe, y_positions, height):
     """
     for chrom, group in dataframe.groupby("chrom"):
         print("chrom: {}".format(chrom))
-        yrange = (y_positions[chrom], height)
+        yrange = (y_positions[chrom], HEIGHT)
         xranges = group[["start", "width"]].values
         yield BrokenBarHCollection(xranges, yrange, facecolors=group["colors"], label=chrom)
 
 
-def horizontal_bar_generator(dataframe, height):
+def horizontal_bar_generator(dataframe):
     """Iterate dataframe and create horizontal bar graphs for printing
     Yeilds:
     Brokenbarhcollection --from BED DF to be plotted
     """
     for chrom, group in dataframe.groupby("chrom"):
-        yrange = (0, height)
+        yrange = (0, HEIGHT)
         xranges = group[["start", "width"]].values
         yield BrokenBarHCollection(xranges, yrange, facecolors=group["colors"], label=chrom)
 
@@ -191,7 +197,6 @@ def area_graph_generator(dataframe, x_axis, y_axis):
             "x": group[x_axis].values,
             "y": group[y_axis].values,
         }
-
 
 
 def area_graph_generator_combine(dataframe, height):
@@ -384,7 +389,7 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
     axis = fig.add_subplot(111)
     plt.rcParams.update({"figure.max_open_warning": 0})
     is_printed = []
-    for collection in horizontal_bar_generator(dataframe, HEIGHT):
+    for collection in horizontal_bar_generator(dataframe):
         axis.add_collection(collection)
         _common_settings(axis)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
@@ -401,7 +406,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     """Print all chromosomes in a single PNG picture"""
     fig = plt.figure(figsize=FIGSIZE)
     axis = fig.add_subplot(111)
-    for collection in horizontal_bar_generator_combine(dataframe, chrom_ybase, HEIGHT):
+    for collection in horizontal_bar_generator_combine(dataframe, chrom_ybase):
         axis.add_collection(collection)
 
     axis.set_yticks([chrom_centers[i] for i in chr_list])
@@ -428,7 +433,7 @@ def print_empty_pngs(filepath, outd, is_printed):
         outfile = outpath(outd, filepath, prefix + chrom)
         print("print empty: {}".format(outfile))
         filestream = open(outfile, "bw")
-        filestream.write(PNG_BYTES)
+        filestream.write(EMPTY_PNG_BYTES)
         filestream.close()
 
 
