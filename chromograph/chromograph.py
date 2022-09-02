@@ -82,6 +82,11 @@ WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
 EMPTY_PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+
+
+TRANSPARENT_PNG = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x01\x03\x00\x00\x00%=m"\x00\x00\x00\x03PLTE\xff\xff\xff\xa7\xc4\x1b\xc8\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x0cIDAT\x08\x1dc` \r\x00\x00\x000\x00\x01\x84\xac\xf1z\x00\x00\x00\x00IEND\xaeB`\x82'
+
+
 CHROMOSOMES = [
     "1",
     "2",
@@ -437,6 +442,7 @@ def print_empty_pngs(filepath, outd, is_printed):
         filestream.close()
 
 
+
 def print_area_graph(
     dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
 ):
@@ -447,10 +453,10 @@ def print_area_graph(
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             _common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, ylim_height)
             axis.set_ylim(bottom=0)
-            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             fig.tight_layout()
+            plt.ylim(0, ylim_height)
+            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             outfile = outpath(outd, filepath, chrom_data["label"])
             print("outfile: {}".format(outfile))
             fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
@@ -479,10 +485,9 @@ def print_bar_chart(
             linewidth=0,
         )
         plt.ylim(0, ylim_height)
-        print("1.")
         axis.set_ylim(bottom=0)
-        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         fig.tight_layout()
+        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         outfile = outpath(outd, filepath, chrom_data["label"])
         print("outfile: {}".format(outfile))
         fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
