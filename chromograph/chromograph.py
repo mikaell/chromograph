@@ -404,7 +404,7 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
-        print_empty_pngs(infile, outd, is_printed)
+        print_transparent_pngs(filepath, outd, is_printed)
 
 
 def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_list):
@@ -422,7 +422,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
 
 
-def print_empty_pngs(filepath, outd, is_printed):
+def print_transparent_pngs(filepath, outd, is_printed):
     """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
@@ -436,9 +436,9 @@ def print_empty_pngs(filepath, outd, is_printed):
 
         prefix = "chr" if gene_build == "str" else ""
         outfile = outpath(outd, filepath, prefix + chrom)
-        print("print empty: {}".format(outfile))
+        print("print transparent: {}".format(outfile))
         filestream = open(outfile, "bw")
-        filestream.write(EMPTY_PNG_BYTES)
+        filestream.write(TRANSPARENT_PNG)
         filestream.close()
 
 
@@ -463,7 +463,7 @@ def print_area_graph(
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
-            print_empty_pngs(filepath, outd, is_printed)
+            print_transparent_pngs(filepath, outd, is_printed)
     else:
         print("WARNING: Combined area graphs are not implemented!")
         False
@@ -494,7 +494,7 @@ def print_bar_chart(
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
-        print_empty_pngs(filepath, outd, is_printed)
+        print_transparent_pngs(filepath, outd, is_printed)
 
 
 def wig_to_dataframe(infile, step, col_format):
@@ -774,7 +774,7 @@ def plot_upd_regions(file, *args, **kwargs):
     for name in dict.fromkeys(is_printed):
         print("outfile: {}".format(outpath(settings["outd"], file, name)))
     if settings["euploid"]:
-        print_empty_pngs(file, settings["outd"], is_printed)
+        print_transparent_pngs(file, settings["outd"], is_printed)
 
 
 def main():

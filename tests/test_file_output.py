@@ -52,10 +52,13 @@ def test_upd_sites():
         readable_hash = hashlib.md5(bytes).hexdigest();
         assert readable_hash == UPD_SITES_MD5
 
+def test_transarent():
+    # TODO
+    return true
 
-    
 
 
-    
 
-    
+
+
+
