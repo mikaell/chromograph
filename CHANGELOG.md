@@ -1,13 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
-## [ 1.2.1]
+## [ 1.1.5]
 ### [Fixed]
 - Print transparent png:s instead of emtpy (which in fact where not empty causing a visual disturbance).
-
-## [ 1.2.0]
-### [Added]
-- Add support for exom coverage.
 
 ## [1.1.4]
 ### [Added]
