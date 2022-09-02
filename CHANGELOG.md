@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.5]
+### [Fixed]
+- Write transparent png:s instead of empty (which actually where not empty)
+
 ## [1.1.4]
 ### [Added]
 - Add option `--chunk / -u` to set Matplotlib chunk size from commandline

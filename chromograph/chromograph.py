@@ -62,7 +62,8 @@ IDEOGRAM_FORMAT = ["chrom", "start", "end", "name", "gStain"]
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
-PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+TRANSPARENT_PNG = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x01\x03\x00\x00\x00%=m"\x00\x00\x00\x03PLTE\xff\xff\xff\xa7\xc4\x1b\xc8\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x0cIDAT\x08\x1dc` \r\x00\x00\x000\x00\x01\x84\xac\xf1z\x00\x00\x00\x00IEND\xaeB`\x82'
+
 CHROMOSOMES = [
     "1",
     "2",
@@ -215,7 +216,7 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
-        print_empty_pngs(infile, outd, is_printed)
+        print_transparent_pngs(infile, outd, is_printed)
 
 
 def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_list):
@@ -233,7 +234,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
 
 
-def print_empty_pngs(file, outd, is_printed):
+def print_transparent_pngs(file, outd, is_printed):
     """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
@@ -248,9 +249,9 @@ def print_empty_pngs(file, outd, is_printed):
 
         prefix = "chr" if gene_build == "str" else ""
         outfile = outpath(outd, file, prefix + chrom)
-        print("print empty: {}".format(outfile))
+        print("print transparent: {}".format(outfile))
         filestream = open(outfile, "bw")
-        filestream.write(PNG_BYTES)
+        filestream.write(TRANSPARENT_PNG)
         filestream.close()
 
 
@@ -526,7 +527,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid, ylim_he
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
-            print_empty_pngs(file, outd, is_printed)
+            print_transparent_pngs(file, outd, is_printed)
     else:
         # TODO:
         print("WARNING: Combined WIG png not implemented!")
@@ -577,7 +578,7 @@ def plot_upd_regions(file, *args, **kwargs):
     for name in dict.fromkeys(is_printed):
         print("outfile: {}".format(outpath(settings["outd"], file, name)))
     if settings["euploid"]:
-        print_empty_pngs(file, settings["outd"], is_printed)
+        print_transparent_pngs(file, settings["outd"], is_printed)
 
 def regions_to_hbar(region_list_chr):
     """Make a MathPlotLIb 'BrokenbarCollection' from upd sites data,
