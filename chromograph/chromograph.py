@@ -655,6 +655,8 @@ def plot_exom_coverage(filepath, *args, **kwargs):
         )
     )
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
+    # TODO: gather data entries, excluding zero values, to make larger bins and a
+    # clearer view in produced picture
     dataframe["bar_width"] = (dataframe.end - dataframe.start) + 600000
     dataframe["norm_coverage"] = (dataframe.meanCoverage / dataframe.meanCoverage.mean()).round(0)
     chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
