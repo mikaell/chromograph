@@ -202,8 +202,11 @@ def common_settings(axis):
     axis.set_axis_off()  # Remove black line surrounding pic.
 
 
-def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
+def print_individual_pics(dataframe, infile, settings, transperant=True):
     """Print one chromosomes per image file"""
+    outd = settings["outd"]
+    euploid = settings["euploid"]
+    dpi = settings["dpi"]
     fig = plt.figure(figsize=(10, 0.5))
     axis = fig.add_subplot(111)
     plt.rcParams.update({"figure.max_open_warning": 0})
@@ -215,15 +218,17 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
         axis.set_xlim(0, CHROM_END_POS) # bounds within maximum chromosome length
         outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=dpi)
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
         print_transparent_pngs(infile, outd, is_printed)
 
 
-def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_list):
+def print_combinbed_pic(dataframe, chrom_ybase, chrom_centers, infile, settings, chr_list):
     """Print all chromosomes in a single PNG picture"""
+    outd = settings["outd"]
+    dpi = settings["dpi"]
     fig = plt.figure(figsize=FIGSIZE)
     axis = fig.add_subplot(111)
     for collection in bed_collections_generator_combine(dataframe, chrom_ybase, HEIGHT):
@@ -234,7 +239,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     axis.axis("tight")
     outfile = outpath(outd, infile, "combined")
     print("outfile: {}".format(outfile))
-    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=dpi)
 
 
 def print_transparent_pngs(file, outd, is_printed):
@@ -442,10 +447,10 @@ def plot_upd_sites(filepath, *args, **kwargs):
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
     if settings["combine"]:
         print_combined_pic(
-            dataframe, chrom_ybase, chrom_centers, filepath, settings["outd"], chromosome_list
+            dataframe, chrom_ybase, chrom_centers, filepath, chromosome_list
         )
     else:
-        print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
+        print_individual_pics(dataframe, filepath, settings)
 
 
 def plot_coverage_wig(filepath, *args, **kwargs):
@@ -681,7 +686,6 @@ def normalize_args(filepath, args, kwargs):
     """Return a dict of args set to default if not given"""
     settings = DEFAULT_SETTING
     settings["outd"] = os.path.dirname(filepath)
-    settings["dpi"] = args.dpi
     
     if "combine" in args:
         settings["combine"] = True
@@ -693,6 +697,10 @@ def normalize_args(filepath, args, kwargs):
         print("output directory:{}".format(kwargs["outd"]))
         assure_dir(kwargs["outd"])
         settings["outd"] = kwargs["outd"]
+    if "small" in args:
+        settings["dpi"] = DPI_SMALL
+    if "large" in args:
+        settings["dpi"] = DPI_LARGE
     return settings
 
 
@@ -742,10 +750,12 @@ def main():
     args.dpi = DPI_SMALL if args.small else DPI_MEDIUM
     args.dpi = DPI_LARGE if args.large else DPI_MEDIUM
 
-    print(args.size)
     agg_chunks_size = args.chunk if args.chunk else DEFAULT_SETTING["agg_chunk_size"]
     matplotlib.rcParams['agg.path.chunksize'] = agg_chunks_size
 
+    print(args)
+
+    
     if args.ideofile:
         plot_ideogram(args.ideofile, args.combine, outd=args.outd)
     if args.upd_sites:
