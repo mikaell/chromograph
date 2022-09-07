@@ -48,6 +48,9 @@ HELP_STR_UPD_REGIONS = "Plot UPD regions from bed file"
 HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
+DPI_SMALL = 100
+DPI_MEDIUM = 1000
+DPI_LARGE = 5000
 PADDING = 200000
 CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
@@ -496,21 +499,19 @@ def plot_wig(filepath, ylim_height, *args, **kwargs):
     )  # delete chromosomes not in CHROMOSOMES
     # df[df[A]!=0].mean
     dataframe["normalized_coverage"] = (dataframe.coverage / dataframe.coverage.mean()).round(0)
-    print_wig(
-        dataframe,
-        filepath,
-        settings["outd"],
-        settings["combine"],
-        settings["normalize"],
-        settings["color"],
-        settings["euploid"],
-        ylim_height
-    )
+    print_wig(dataframe, filepath, settings, ylim_height)
 
 
-def print_wig(dataframe, file, outd, combine, normalize, color, euploid, ylim_height):
+def print_wig(dataframe, file, settings, ylim_height):
     """Print wig graph as PNG file"""
     data_state = "normalized_coverage" if normalize else "coverage"
+    outd = settings["outd"]
+    combine = settings["combine"]
+    normalize = settings["normalize"]
+    color = settings["color"]
+    euploid = settings["euploid"]
+    dpi = settings["dpi"]
+    
     if not combine:  # Plot one chromosome per png
         is_printed = []
         for chrom_data in coverage_generator(dataframe, data_state):
@@ -523,7 +524,7 @@ def print_wig(dataframe, file, outd, combine, normalize, color, euploid, ylim_he
             fig.tight_layout()
             outfile = outpath(outd, file, chrom_data["label"])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=dpi)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
@@ -571,7 +572,7 @@ def plot_upd_regions(file, *args, **kwargs):
             is_printed.append(bar.get_label())
 
         outfile = outpath(settings["outd"], file, bar.get_label())
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=settings["dpi"])
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
@@ -674,11 +675,14 @@ def normalize_upd_sites_args(filepath, args, kwargs):
     return settings
 
 
+# TODO: args and settings looks like same kind of work is done in two
+# places, refactor?
 def normalize_args(filepath, args, kwargs):
     """Return a dict of args set to default if not given"""
     settings = DEFAULT_SETTING
     settings["outd"] = os.path.dirname(filepath)
-
+    settings["dpi"] = args.dpi
+    
     if "combine" in args:
         settings["combine"] = True
     if "norm" in args:
@@ -724,6 +728,9 @@ def main():
     parser.add_argument("-k", "--rgb", dest="rgb", help=HELP_STR_RGB, metavar="FILE")
     parser.add_argument("-n", "--norm", dest="norm", help=HELP_STR_NORM, action="store_true")
     parser.add_argument("-x", "--combine", help=HELP_STR_COMBINE, action="store_true")
+    parser.add_argument("--small", action="store_true")
+    parser.add_argument("--medium", action="store_true")
+    parser.add_argument("--large", action="store_true")
 
 
     args = parser.parse_args()
@@ -732,7 +739,10 @@ def main():
     args.norm = "norm" if args.norm else None
     args.combine = "combine" if args.combine else None
     args.euploid = "euploid" if args.euploid else None
+    args.dpi = DPI_SMALL if args.small else DPI_MEDIUM
+    args.dpi = DPI_LARGE if args.large else DPI_MEDIUM
 
+    print(args.size)
     agg_chunks_size = args.chunk if args.chunk else DEFAULT_SETTING["agg_chunk_size"]
     matplotlib.rcParams['agg.path.chunksize'] = agg_chunks_size
 
