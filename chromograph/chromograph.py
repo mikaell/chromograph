@@ -1,5 +1,4 @@
-"""
-Plot chromosoms and misc variants. Can be invoked from commandline
+"""Plot chromosoms and misc variants. Can be invoked from commandline
 or from imported.
 
     $ ./chromograph.py --cyt cytoBand.bed
@@ -16,10 +15,8 @@ Project on Github:
 
 Notes On Exom Coverage
 ======================
-
-
-
-hela regionen var normalhög om täckningen är ok i varje selekterat segment i filen
+Hela regionen var normalhög om täckningen är ok i varje selekterat
+segment i filen
 
 Ok, det börjar klarna. Vad som behövs
 1.Region-definition
@@ -28,31 +25,49 @@ Ok, det börjar klarna. Vad som behövs
 
 Och bed-input är segmenten
 
-dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln (längs
- kromosomen). Min intuition är att vi inte kommer behöva funderar på det, men vi
- får se. Det finns lite gen-fattiga regioner som kan komma att falla ut som
- konsekvent låga ändå, om det inte finns några gener/infångstregioner inom
- pixeln. Isf kanske man behöver “sudda” över dem med grannarnas värden för att
- få det bra, men det blir hypotetiskt steg II.
-
-
+dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln
+ (längs kromosomen). Min intuition är att vi inte kommer behöva
+ funderar på det, men vi får se. Det finns lite gen-fattiga regioner
+ som kan komma att falla ut som konsekvent låga ändå, om det inte
+ finns några gener/infångstregioner inom pixeln. Isf kanske man
+ behöver “sudda” över dem med grannarnas värden för att få det bra,
+ men det blir hypotetiskt steg II.
 
 
 
 Pandas Notes
 ------------
-
-
 df.diff()
 
 Drop low coverage
     chr.drop(df[df.meanCoverage< 1.0].index, inplace=True)
 
 Gap between read end and next start less than 1000
-    chr['start']-chr['end'].shift() < 1000
+    mask = chr['start']-chr['end'].shift() < 1000
+
+chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
+
+
+chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
+
+OR
+
+s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
+chr['weight'] = np.where(df.mask == 1, s, 0)
+
+
+Nu kapa allt mellan start1 och stopn. Normaliser = dividera över något lämpligt
 
 
 
+Bra forum. Pandas är sjukt
+
+https://stackoverflow.com/questions/61097181/dataframe-cumulative-sum-of-column-until-condition-is-reached-and-return-sum-in
+
+Alternativ algoritm är att dela kromosomen i x-antal bins. Sedan addera
+till binen om start ligger innanför och är tillräckligt hög coverage
+
+cut qcut?
 
 """
 import os
