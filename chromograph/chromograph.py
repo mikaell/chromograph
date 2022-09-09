@@ -43,25 +43,34 @@ df.diff()
 >>> chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 
 Drop low coverage
-    chr.drop(df[df.meanCoverage< 1.0].index, inplace=True)
+    chr.drop(chr[chr.meanCoverage< 10.0].index, inplace=True)
+    chr = chr.drop(columns='F5')
+
 
 Gap between read end and next start less than 1000
-    mask = chr['start']-chr['end'].shift() < 1000
+    mask = chr['start']-chr['end'].shift() < 5000
 
 chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 
 
 chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
-
 OR
+
 
 s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
 chr['weight2'] = np.where(mask == 1, s, chr['weight'])
 
 
+s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('weight')
+chr['weight'] = np.where(df.mask == 1, s, 0)
+
+
 
 Nu kapa allt mellan start1 och stopn. Normaliser = dividera över något lämpligt
 
+
+är detta rätt?
+>>> chr.groupby('asdf').agg({'start':['min'], 'end':['max']})
 
 
 Bra forum. Pandas är sjukt
@@ -73,6 +82,10 @@ till binen om start ligger innanför och är tillräckligt hög coverage
 
 cut qcut?
 
+
+
+kanske bra?
+https://stackoverflow.com/questions/53742472/python-find-elements-with-same-id-in-a-dataframe-and-group-together?noredirect=1&lq=1
 """
 import os
 import re
