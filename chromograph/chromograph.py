@@ -56,6 +56,16 @@ chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
 OR
 
+
+Verkar funka, nu bar att vikta rätt
+s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
+chr['asdf'] = s
+chr.groupby('asdf', sort=False).agg({'start':['min'], 'end':['max']})
+
+chr['weight2'] = np.where(mask == 1, s, chr['weight'])
+
+
+
 s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('weight')
 chr['weight'] = np.where(df.mask == 1, s, 0)
 
