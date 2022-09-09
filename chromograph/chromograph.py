@@ -38,6 +38,9 @@ dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln
 Pandas Notes
 ------------
 df.diff()
+>>> chr = pandas.read_csv(file, names=EXOM_FORMAT, sep="\t", skiprows=1)
+>>> chr.drop(chr[chr.meanCoverage< 1.0].index, inplace=True)
+>>> chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 
 Drop low coverage
     chr.drop(df[df.meanCoverage< 1.0].index, inplace=True)
@@ -53,7 +56,8 @@ chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None)
 OR
 
 s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
-chr['weight'] = np.where(df.mask == 1, s, 0)
+chr['weight2'] = np.where(mask == 1, s, chr['weight'])
+
 
 
 Nu kapa allt mellan start1 och stopn. Normaliser = dividera över något lämpligt
