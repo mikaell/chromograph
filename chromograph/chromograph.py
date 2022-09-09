@@ -38,6 +38,9 @@ dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln
 Pandas Notes
 ------------
 df.diff()
+>>> chr = pandas.read_csv(file, names=EXOM_FORMAT, sep="\t", skiprows=1)
+>>> chr.drop(chr[chr.meanCoverage< 1.0].index, inplace=True)
+>>> chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 
 Drop low coverage
     chr.drop(chr[chr.meanCoverage< 10.0].index, inplace=True)
@@ -52,6 +55,7 @@ chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
 
 chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
 OR
+
 s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('weight')
 chr['weight'] = np.where(df.mask == 1, s, 0)
 
