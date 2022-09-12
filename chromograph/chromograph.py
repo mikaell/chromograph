@@ -11,84 +11,6 @@ Project on Github:
 
     https://github.com/mikaell/chromograph
 
-
-
-Notes On Exom Coverage
-======================
-Hela regionen var normalhög om täckningen är ok i varje selekterat
-segment i filen
-
-Ok, det börjar klarna. Vad som behövs
-1.Region-definition
-2. Segment,
-
-
-Och bed-input är segmenten
-
-dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln
- (längs kromosomen). Min intuition är att vi inte kommer behöva
- funderar på det, men vi får se. Det finns lite gen-fattiga regioner
- som kan komma att falla ut som konsekvent låga ändå, om det inte
- finns några gener/infångstregioner inom pixeln. Isf kanske man
- behöver “sudda” över dem med grannarnas värden för att få det bra,
- men det blir hypotetiskt steg II.
-
-
-
-Pandas Notes
-------------
-df.diff()
->>> chr = pandas.read_csv(file, names=EXOM_FORMAT, sep="\t", skiprows=1)
->>> chr.drop(chr[chr.meanCoverage< 1.0].index, inplace=True)
->>> chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
-
-Drop low coverage
-    chr.drop(chr[chr.meanCoverage< 10.0].index, inplace=True)
-    chr = chr.drop(columns='F5')
-
-
-Gap between read end and next start less than 1000
-    mask = chr['start']-chr['end'].shift() < 5000
-
-chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
-
-
-chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
-OR
-
-Verkar funka, nu bar att vikta rätt
-s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
-chr['asdf'] = s
-chr.groupby('asdf', sort=False).agg({'start':['min'], 'end':['max']})
-
-chr['weight2'] = np.where(mask == 1, s, chr['weight'])
-
-
-s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('weight')
-chr['weight'] = np.where(df.mask == 1, s, 0)
-
-
-
-Nu kapa allt mellan start1 och stopn. Normaliser = dividera över något lämpligt
-
-
-är detta rätt?
->>> chr.groupby('asdf').agg({'start':['min'], 'end':['max']})
-
-
-Bra forum. Pandas är sjukt
-
-https://stackoverflow.com/questions/61097181/dataframe-cumulative-sum-of-column-until-condition-is-reached-and-return-sum-in
-
-Alternativ algoritm är att dela kromosomen i x-antal bins. Sedan addera
-till binen om start ligger innanför och är tillräckligt hög coverage
-
-cut qcut?
-
-
-
-kanske bra?
-https://stackoverflow.com/questions/53742472/python-find-elements-with-same-id-in-a-dataframe-and-group-together?noredirect=1&lq=1
 """
 import os
 import re
@@ -153,7 +75,7 @@ EXOM_FORMAT = [
     "percentage100",
     "sampleName",
 ]
-
+IGNORE_GAP = 10000
 
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
@@ -553,7 +475,9 @@ def print_bar_chart(
     is_printed = []
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
+        print(chrom_data)
         _common_settings(axis)
+       # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]       
         axis.bar(
             chrom_data["x"],
             chrom_data["y"],
@@ -718,13 +642,14 @@ def plot_upd_sites(filepath, *args, **kwargs):
     else:
         print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
 
+        
 
 def plot_exom_coverage(filepath, *args, **kwargs):
     """Plot exom coverage from bed file. Format:"""
     settings = _args_to_dict(filepath, args, kwargs)
-    ylim_height = 13
+    ylim_height = 1
     x_axis = "start"
-    y_axis = "norm_coverage"
+    y_axis = "bar_height"
 
     print(
         "Plot Exom coverage with settings\ncombine:{}\neuploid:{}".format(
@@ -732,15 +657,25 @@ def plot_exom_coverage(filepath, *args, **kwargs):
         )
     )
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
-    # TODO: gather data entries, excluding zero values, to make larger bins and a
-    # clearer view in produced picturerr
-    dataframe["bar_width"] = (dataframe.end - dataframe.start) + 600000
-    dataframe["norm_coverage"] = (dataframe.meanCoverage / dataframe.meanCoverage.mean()).round(0)
-    chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
-    chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
+    dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
 
+    dataframe['weight'] =(dataframe['end']-dataframe['start'])*dataframe['meanCoverage']
+    # Regard exoms as one if distance between twp are less than Ignore gap. This is done by creating
+    # a boolean mask. Weights of exoms included in such a added and divided by the total width to create
+    # representative value (bar height).
+    mask = dataframe['start']-dataframe['end'].shift() < IGNORE_GAP
+    dataframe['cumulative_weight'] = dataframe.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
+    dataframe2 = dataframe.groupby(['cumulative_weight', 'chrom'], sort=False).agg(start=('start','min'), end= ('end','max')).reset_index()
+    dataframe2.reindex(['cumulative_weight','start','end'], axis='columns')
+
+    dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start']
+    dataframe2['bar_height'] = dataframe2['cumulative_weight'] / dataframe2['bar_width']
+    dataframe2['bar_height'].clip(upper=30, inplace=True)
+
+
+    print(dataframe2)
     print_bar_chart(
-        dataframe,
+        dataframe2,
         filepath,
         settings["outd"],
         settings["combine"],
