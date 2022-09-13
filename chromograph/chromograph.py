@@ -11,6 +11,14 @@ Project on Github:
 
     https://github.com/mikaell/chromograph
 
+
+Count increasing numbers in 'start' -some might not be sorted causing the strange high graphs I get
+(chr.start.diff() > 0).sum()
+
+
+pandas.read_csv(filepath, names=["cumulative_weight","chrom","start","end","bar_width","bar_height"], sep="\t", skiprows=1)
+
+
 """
 import os
 import re
@@ -665,14 +673,26 @@ def plot_exom_coverage(filepath, *args, **kwargs):
     # Regard exoms as one if distance between twp are less than Ignore gap. This is done by creating
     # a boolean mask. Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
-    mask = dataframe['start']-dataframe['end'].shift() < IGNORE_GAP
+
+    mask_forward = dataframe['start'].shift()-dataframe['end'] < IGNORE_GAP # IGNORE_GAP borde gå både bakåt och framåt
+    mask_backward = dataframe['end']-dataframe['start'].shift() < IGNORE_GAP
+    mask = mask_forward | mask_backward
+    
+    print(dataframe)
+    print(mask)
     dataframe['cumulative_weight'] = dataframe.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
+
     dataframe2 = dataframe.groupby(['cumulative_weight', 'chrom'], sort=False).agg(start=('start','min'), end= ('end','max')).reset_index()
     dataframe2.reindex(['cumulative_weight','start','end'], axis='columns')
 
     dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start']
     dataframe2['bar_height'] = dataframe2['cumulative_weight'] / dataframe2['bar_width']
-    dataframe2['bar_height'].clip(upper=30, inplace=True)
+    dataframe2.drop(dataframe2[dataframe2.bar_width <10000].index, inplace=True)
+    # dataframe2.drop(dataframe2[dataframe2.bar_height <0.1].index, inplace=True)
+    dataframe2.to_csv("DBG_df.csv", sep='\t')
+
+    
+    # dataframe2['bar_height'].clip(upper=30, inplace=True)
 
 
     print(dataframe2)
@@ -969,3 +989,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+def find_bad_apple(df, index):
+    bad_apples = []
+    previous_end = 0
+    for i in range(len(df)):
+        current_start = df['start'].iloc[i]
+        if(previous_end > current_start):
+            #previous value is greater, this should not happen, something is wrong with the current frame
+            bad_apples.append(df.iloc[i])
+        previous_end = df['end'].iloc[i]
+    return bad_apples
