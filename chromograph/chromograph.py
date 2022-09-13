@@ -18,6 +18,7 @@ Count increasing numbers in 'start' -some might not be sorted causing the strang
 
 pandas.read_csv(filepath, names=["cumulative_weight","chrom","start","end","bar_width","bar_height"], sep="\t", skiprows=1)
 
+https://stackoverflow.com/questions/61097181/dataframe-cumulative-sum-of-column-until-condition-is-reached-and-return-sum-in
 
 """
 import os
@@ -674,9 +675,11 @@ def plot_exom_coverage(filepath, *args, **kwargs):
     # a boolean mask. Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
 
-    mask_forward = dataframe['start'].shift()-dataframe['end'] < IGNORE_GAP # IGNORE_GAP borde gå både bakåt och framåt
-    mask_backward = dataframe['end']-dataframe['start'].shift() < IGNORE_GAP
-    mask = mask_forward | mask_backward
+    mask = dataframe['start'].shift(-1)-dataframe['end'] < 5000 # IGNORE_GAP borde gå både bakåt och framåt
+
+    mask2=(dataframe['start'])-dataframe['end'].shift() < 5000
+    # mask_backward = dataframe['end']-dataframe['start'].shift() < IGNORE_GAP
+    # mask = mask_forward | mask_backward
     
     print(dataframe)
     print(mask)
@@ -687,12 +690,12 @@ def plot_exom_coverage(filepath, *args, **kwargs):
 
     dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start']
     dataframe2['bar_height'] = dataframe2['cumulative_weight'] / dataframe2['bar_width']
-    dataframe2.drop(dataframe2[dataframe2.bar_width <10000].index, inplace=True)
+    # dataframe2.drop(dataframe2[dataframe2.bar_width <10000].index, inplace=True)
     # dataframe2.drop(dataframe2[dataframe2.bar_height <0.1].index, inplace=True)
     dataframe2.to_csv("DBG_df.csv", sep='\t')
 
     
-    # dataframe2['bar_height'].clip(upper=30, inplace=True)
+    dataframe2['bar_height'].clip(upper=25, inplace=True)
 
 
     print(dataframe2)
