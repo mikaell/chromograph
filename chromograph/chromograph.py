@@ -196,6 +196,7 @@ def area_graph_generator(dataframe, x_axis, y_axis):
             "label": chrom,
             "x": group[x_axis].values,
             "y": group[y_axis].values,
+            "bar_width": group["bar_width"].values,
         }
 
 
@@ -461,7 +462,7 @@ def print_area_graph(
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
-            print_empty_pngs(filepath, outd, is_printed)
+            print_transparent_pngs(filepath, outd, is_printed)
     else:
         print("WARNING: Combined area graphs are not implemented!")
         False
@@ -494,7 +495,7 @@ def print_bar_chart(
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
-        print_empty_pngs(filepath, outd, is_printed)
+        print_transparent_pngs(filepath, outd, is_printed)
 
 
 def wig_to_dataframe(infile, step, col_format):
@@ -750,7 +751,7 @@ def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color,
         is_printed = []
         for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-            common_settings(axis)
+            _common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
             plt.ylim(0, ylim_height)
             axis.set_ylim(bottom=0)
@@ -777,11 +778,10 @@ def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, 
     # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
     #        ylim=(0, 8), yticks=np.arange(1, 8))
     # plt.show()
-    print('???')
     is_printed = []
     for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-        common_settings(axis)
+        _common_settings(axis)
         axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
         plt.ylim(0, ylim_height)
         print('1.')
@@ -794,7 +794,7 @@ def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, 
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
-        print_empty_pngs(file_path, outd, is_printed)
+        print_transparent_pngs(file_path, outd, is_printed)
 
 
 def plot_upd_regions(file, *args, **kwargs):
