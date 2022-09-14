@@ -668,10 +668,9 @@ def plot_exom_coverage(filepath, *args, **kwargs):
         )
     )
 
-    # Regard exoms as one if distance between twp are less than Ignore gap. This is done by creating
-    # a boolean mask. Weights of exoms included in such a added and divided by the total width to create
+    # Regard exoms as one if distance between two adjecent entries are less than Ignore gap.
+    # Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
-
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
     dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
     mask = dataframe['start'].sub(dataframe['end'].shift(fill_value=0)).gt(10000).cumsum()
@@ -679,17 +678,8 @@ def plot_exom_coverage(filepath, *args, **kwargs):
     dataframe2 = dataframe.groupby([mask, 'chrom']).agg(start=('start', 'first'), end=('end','last'), sum=('weight','sum'))
     dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start'] + PADDING
     dataframe2['bar_height'] = dataframe2['sum'] / dataframe2['bar_width']
+    dataframe2['bar_height'].clip(upper=80, inplace=True)
 
-
-    print(dataframe)
-    print(mask)
-
-    
-    dataframe2.to_csv("DBG_df.csv", sep='\t')
-    dataframe2['bar_height'].clip(upper=100, inplace=True)
-
-
-    print(dataframe2)
     print_bar_chart(
         dataframe2,
         filepath,
