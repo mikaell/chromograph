@@ -11,6 +11,84 @@ Project on Github:
 
     https://github.com/mikaell/chromograph
 
+
+
+Notes On Exom Coverage
+======================
+Hela regionen var normalhög om täckningen är ok i varje selekterat
+segment i filen
+
+Ok, det börjar klarna. Vad som behövs
+1.Region-definition
+2. Segment,
+
+
+Och bed-input är segmenten
+
+dnil: Jepp! Regionerna blir i princip pixelbreda bitar av x-axeln
+ (längs kromosomen). Min intuition är att vi inte kommer behöva
+ funderar på det, men vi får se. Det finns lite gen-fattiga regioner
+ som kan komma att falla ut som konsekvent låga ändå, om det inte
+ finns några gener/infångstregioner inom pixeln. Isf kanske man
+ behöver “sudda” över dem med grannarnas värden för att få det bra,
+ men det blir hypotetiskt steg II.
+
+
+
+Pandas Notes
+------------
+df.diff()
+>>> chr = pandas.read_csv(file, names=EXOM_FORMAT, sep="\t", skiprows=1)
+>>> chr.drop(chr[chr.meanCoverage< 1.0].index, inplace=True)
+>>> chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
+
+Drop low coverage
+    chr.drop(chr[chr.meanCoverage< 10.0].index, inplace=True)
+    chr = chr.drop(columns='F5')
+
+
+Gap between read end and next start less than 1000
+    mask = chr['start']-chr['end'].shift() < 5000
+
+chr['weight'] =(chr['end']-chr['start'])*chr['meanCoverage']
+
+
+chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].sum().rename_axis(None).to_frame()
+OR
+
+Verkar funka, nu bar att vikta rätt
+s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
+chr['asdf'] = s
+chr.groupby('asdf', sort=False).agg({'start':['min'], 'end':['max']})
+
+chr['weight2'] = np.where(mask == 1, s, chr['weight'])
+
+
+s = chr.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('weight')
+chr['weight'] = np.where(df.mask == 1, s, 0)
+
+
+
+Nu kapa allt mellan start1 och stopn. Normaliser = dividera över något lämpligt
+
+
+är detta rätt?
+>>> chr.groupby('asdf').agg({'start':['min'], 'end':['max']})
+
+
+Bra forum. Pandas är sjukt
+
+https://stackoverflow.com/questions/61097181/dataframe-cumulative-sum-of-column-until-condition-is-reached-and-return-sum-in
+
+Alternativ algoritm är att dela kromosomen i x-antal bins. Sedan addera
+till binen om start ligger innanför och är tillräckligt hög coverage
+
+cut qcut?
+
+
+
+kanske bra?
+https://stackoverflow.com/questions/53742472/python-find-elements-with-same-id-in-a-dataframe-and-group-together?noredirect=1&lq=1
 """
 import os
 import re
@@ -39,7 +117,6 @@ matplotlib.use("Agg")
 HELP_STR_COMBINE = "Write all graphs to one file (default one plot per file)"
 HELP_STR_COV = "Plot coverage from fixed step wig file"
 HELP_STR_EU = "Always output an euploid amount of files -even if some are empty"
-HELP_STR_EXOM = "Plot exom coverage from bed-file"
 HELP_STR_IDEO = "Plot ideograms from bed-file on format {}"
 HELP_STR_NORM = "Normalize data (wig/coverage)"
 HELP_STR_RGB = "Set color (RGB hex, only with --coverage option)"
@@ -76,11 +153,13 @@ EXOM_FORMAT = [
     "percentage100",
     "sampleName",
 ]
-EXOM_GAP = 10000
+
 
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
+EMPTY_PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x01\x00\x00\x00\x007n\xf9$\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+
 
 TRANSPARENT_PNG = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x01\x03\x00\x00\x00%=m"\x00\x00\x00\x03PLTE\xff\xff\xff\xa7\xc4\x1b\xc8\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x0cIDAT\x08\x1dc` \r\x00\x00\x000\x00\x01\x84\xac\xf1z\x00\x00\x00\x00IEND\xaeB`\x82'
 
@@ -145,11 +224,14 @@ get_color = {
 }
 
 
+
+
 # TODO: skapa pytest med md5-sum för att automatisera körningar
 
 
 ## MatPlotLib: Functions to yield input for MatPlotLib
 ## ---------------------------------------------------
+
 def horizontal_bar_generator_combine(dataframe, y_positions):
     """Iterate dataframe
 
@@ -196,8 +278,6 @@ def area_graph_generator(dataframe, x_axis, y_axis):
             "label": chrom,
             "x": group[x_axis].values,
             "y": group[y_axis].values,
-
-            "bar_width": group["bar_width"].values,
         }
 
 
@@ -401,7 +481,7 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
-        print_transparent_pngs(infile, outd, is_printed)
+        print_empty_pngs(infile, outd, is_printed)
 
 
 def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_list):
@@ -419,7 +499,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
 
 
-def print_transparent_pngs(file, outd, is_printed):
+def print_empty_pngs(filepath, outd, is_printed):
     """Write an empty png file to disk for every chromosome what has, always including Y.
     Motivated by auxilary software not being able to handle missing output
     chromosome are missing in the wig."""
@@ -432,12 +512,12 @@ def print_transparent_pngs(file, outd, is_printed):
             continue
 
         prefix = "chr" if gene_build == "str" else ""
-
-        outfile = outpath(outd, file, prefix + chrom)
-        print("print transparent: {}".format(outfile))
+        outfile = outpath(outd, filepath, prefix + chrom)
+        print("print empty: {}".format(outfile))
         filestream = open(outfile, "bw")
-        filestream.write(TRANSPARENT_PNG)
+        filestream.write(EMPTY_PNG_BYTES)
         filestream.close()
+
 
 
 def print_area_graph(
@@ -460,7 +540,7 @@ def print_area_graph(
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
-            print_transparent_pngs(filepath, outd, is_printed)
+            print_empty_pngs(filepath, outd, is_printed)
     else:
         print("WARNING: Combined area graphs are not implemented!")
         False
@@ -473,9 +553,7 @@ def print_bar_chart(
     is_printed = []
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-        print(chrom_data)
         _common_settings(axis)
-        # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         axis.bar(
             chrom_data["x"],
             chrom_data["y"],
@@ -493,7 +571,7 @@ def print_bar_chart(
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
-        print_transparent_pngs(filepath, outd, is_printed)
+        print_empty_pngs(filepath, outd, is_printed)
 
 
 def wig_to_dataframe(infile, step, col_format):
@@ -642,34 +720,27 @@ def plot_upd_sites(filepath, *args, **kwargs):
 
 
 def plot_exom_coverage(filepath, *args, **kwargs):
-    """Plot exom coverage from bed file."""
+    """Plot exom coverage from bed file. Format:"""
     settings = _args_to_dict(filepath, args, kwargs)
-    ylim_height = 5
+    ylim_height = 13
     x_axis = "start"
-    y_axis = "bar_height"
+    y_axis = "norm_coverage"
 
     print(
         "Plot Exom coverage with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
         )
     )
-
-    # Regard exoms as one if distance between two adjecent entries are less than exom gap.
-    # Weights of exoms included in such a added and divided by the total width to create
-    # representative value (bar height).
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
-    dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
-    mask = dataframe["start"].sub(dataframe["end"].shift(fill_value=0)).gt(EXOM_GAP).cumsum()
-    dataframe["weight"] = (dataframe["end"] - dataframe["start"]) * dataframe["meanCoverage"]
-    dataframe2 = dataframe.groupby([mask, "chrom"]).agg(
-        start=("start", "first"), end=("end", "last"), sum=("weight", "sum")
-    )
-    dataframe2["bar_width"] = dataframe2["end"] - dataframe2["start"] + PADDING
-    dataframe2["bar_height"] = dataframe2["sum"] / dataframe2["bar_width"]
-    dataframe2["bar_height"].clip(upper=80, inplace=True)
+    # TODO: gather data entries, excluding zero values, to make larger bins and a
+    # clearer view in produced picturerr
+    dataframe["bar_width"] = (dataframe.end - dataframe.start) + 600000
+    dataframe["norm_coverage"] = (dataframe.meanCoverage / dataframe.meanCoverage.mean()).round(0)
+    chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
+    chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
 
     print_bar_chart(
-        dataframe2,
+        dataframe,
         filepath,
         settings["outd"],
         settings["combine"],
@@ -738,63 +809,6 @@ def plot_wig_aux(filepath, ylim_height, *args, **kwargs):
     )
 
 
-def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
-    """Print an area graph as PNG file. Used to print picture of coverage"""
-
-    print("= = =")
-    print(dataframe)
-    print(y_axis)
-
-    if not combine:  # Plot one chromosome per png
-        is_printed = []
-        for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
-            fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-            _common_settings(axis)
-            axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, ylim_height)
-            axis.set_ylim(bottom=0)
-            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
-            fig.tight_layout()
-            outfile = outpath(outd, file_path, chrom_data["label"])
-            print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
-            is_printed.append(chrom_data["label"])
-            plt.close(fig)  # save memory
-        if euploid:
-            print_transparent_pngs(file, outd, is_printed)
-    else:
-        # TODO:
-        print("WARNING: Combined area graphs are not implemented!")
-        False
-
-
-def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
-    """Print vertical bar chart"""
-    # plot
-    # fig, ax = plt.subplots()
-    # ax.bar(x, y, width=1, edgecolor="white", linewidth=0.7)
-    # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
-    #        ylim=(0, 8), yticks=np.arange(1, 8))
-    # plt.show()
-    is_printed = []
-    for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
-        fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-        _common_settings(axis)
-        axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
-        plt.ylim(0, ylim_height)
-        print('1.')
-        axis.set_ylim(bottom=0)
-        axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
-        fig.tight_layout()
-        outfile = outpath(outd, file_path, chrom_data["label"])
-        print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
-        is_printed.append(chrom_data["label"])
-        plt.close(fig)  # save memory
-    if euploid:
-        print_transparent_pngs(file_path, outd, is_printed)
-
-
 def plot_upd_regions(file, *args, **kwargs):
     """Print region as PNG file
     <chrom>  <start>  <stop>   <desc>
@@ -839,8 +853,7 @@ def plot_upd_regions(file, *args, **kwargs):
     for name in dict.fromkeys(is_printed):
         print("outfile: {}".format(outpath(settings["outd"], file, name)))
     if settings["euploid"]:
-        print_transparent_pngs(file, settings["outd"], is_printed)
-
+        print_empty_pngs(file, settings["outd"], is_printed)
 
 
 def main():
@@ -961,15 +974,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def find_bad_apple(df, index):
-    bad_apples = []
-    previous_end = 0
-    for i in range(len(df)):
-        current_start = df["start"].iloc[i]
-        if previous_end > current_start:
-            # previous value is greater, this should not happen, something is wrong with the current frame
-            bad_apples.append(df.iloc[i])
-        previous_end = df["end"].iloc[i]
-    return bad_apples
