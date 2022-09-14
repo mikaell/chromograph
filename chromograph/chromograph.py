@@ -11,15 +11,6 @@ Project on Github:
 
     https://github.com/mikaell/chromograph
 
-
-Count increasing numbers in 'start' -some might not be sorted causing the strange high graphs I get
-(chr.start.diff() > 0).sum()
-
-
-pandas.read_csv(filepath, names=["cumulative_weight","chrom","start","end","bar_width","bar_height"], sep="\t", skiprows=1)
-
-https://stackoverflow.com/questions/61097181/dataframe-cumulative-sum-of-column-until-condition-is-reached-and-return-sum-in
-
 """
 import os
 import re
@@ -48,6 +39,7 @@ matplotlib.use("Agg")
 HELP_STR_COMBINE = "Write all graphs to one file (default one plot per file)"
 HELP_STR_COV = "Plot coverage from fixed step wig file"
 HELP_STR_EU = "Always output an euploid amount of files -even if some are empty"
+HELP_STR_EXOM = "Plot exom coverage from bed-file"
 HELP_STR_IDEO = "Plot ideograms from bed-file on format {}"
 HELP_STR_NORM = "Normalize data (wig/coverage)"
 HELP_STR_RGB = "Set color (RGB hex, only with --coverage option)"
@@ -84,7 +76,7 @@ EXOM_FORMAT = [
     "percentage100",
     "sampleName",
 ]
-IGNORE_GAP = 10000
+EXOM_GAP = 10000
 
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
@@ -153,14 +145,11 @@ get_color = {
 }
 
 
-
-
 # TODO: skapa pytest med md5-sum för att automatisera körningar
 
 
 ## MatPlotLib: Functions to yield input for MatPlotLib
 ## ---------------------------------------------------
-
 def horizontal_bar_generator_combine(dataframe, y_positions):
     """Iterate dataframe
 
@@ -452,7 +441,6 @@ def print_transparent_pngs(file, outd, is_printed):
         filestream.close()
 
 
-
 def print_area_graph(
     dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
 ):
@@ -488,7 +476,7 @@ def print_bar_chart(
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
         print(chrom_data)
         _common_settings(axis)
-       # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]       
+        # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         axis.bar(
             chrom_data["x"],
             chrom_data["y"],
@@ -653,10 +641,9 @@ def plot_upd_sites(filepath, *args, **kwargs):
     else:
         print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
 
-        
 
 def plot_exom_coverage(filepath, *args, **kwargs):
-    """Plot exom coverage from bed file. Format:"""
+    """Plot exom coverage from bed file."""
     settings = _args_to_dict(filepath, args, kwargs)
     ylim_height = 5
     x_axis = "start"
@@ -668,17 +655,19 @@ def plot_exom_coverage(filepath, *args, **kwargs):
         )
     )
 
-    # Regard exoms as one if distance between two adjecent entries are less than Ignore gap.
+    # Regard exoms as one if distance between two adjecent entries are less than exom gap.
     # Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
     dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
-    mask = dataframe['start'].sub(dataframe['end'].shift(fill_value=0)).gt(10000).cumsum()
-    dataframe['weight'] =(dataframe['end']-dataframe['start'])*dataframe['meanCoverage']
-    dataframe2 = dataframe.groupby([mask, 'chrom']).agg(start=('start', 'first'), end=('end','last'), sum=('weight','sum'))
-    dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start'] + PADDING
-    dataframe2['bar_height'] = dataframe2['sum'] / dataframe2['bar_width']
-    dataframe2['bar_height'].clip(upper=80, inplace=True)
+    mask = dataframe["start"].sub(dataframe["end"].shift(fill_value=0)).gt(EXOM_GAP).cumsum()
+    dataframe["weight"] = (dataframe["end"] - dataframe["start"]) * dataframe["meanCoverage"]
+    dataframe2 = dataframe.groupby([mask, "chrom"]).agg(
+        start=("start", "first"), end=("end", "last"), sum=("weight", "sum")
+    )
+    dataframe2["bar_width"] = dataframe2["end"] - dataframe2["start"] + PADDING
+    dataframe2["bar_height"] = dataframe2["sum"] / dataframe2["bar_width"]
+    dataframe2["bar_height"].clip(upper=80, inplace=True)
 
     print_bar_chart(
         dataframe2,
@@ -975,15 +964,13 @@ if __name__ == "__main__":
     main()
 
 
-
-
 def find_bad_apple(df, index):
     bad_apples = []
     previous_end = 0
     for i in range(len(df)):
-        current_start = df['start'].iloc[i]
-        if(previous_end > current_start):
-            #previous value is greater, this should not happen, something is wrong with the current frame
+        current_start = df["start"].iloc[i]
+        if previous_end > current_start:
+            # previous value is greater, this should not happen, something is wrong with the current frame
             bad_apples.append(df.iloc[i])
-        previous_end = df['end'].iloc[i]
+        previous_end = df["end"].iloc[i]
     return bad_apples
