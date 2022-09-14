@@ -656,7 +656,7 @@ def plot_upd_sites(filepath, *args, **kwargs):
 def plot_exom_coverage(filepath, *args, **kwargs):
     """Plot exom coverage from bed file. Format:"""
     settings = _args_to_dict(filepath, args, kwargs)
-    ylim_height = 1
+    ylim_height = 5
     x_axis = "start"
     y_axis = "bar_height"
 
@@ -665,35 +665,26 @@ def plot_exom_coverage(filepath, *args, **kwargs):
             settings["combine"], settings["euploid"]
         )
     )
-    dataframe = _read_dataframe(filepath, EXOM_FORMAT)
-    dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
 
-    dataframe['weight'] =(dataframe['end']-dataframe['start'])*dataframe['meanCoverage']
     # Regard exoms as one if distance between twp are less than Ignore gap. This is done by creating
     # a boolean mask. Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
 
-    mask = dataframe['start'].shift(-1)-dataframe['end'] < 5000 # IGNORE_GAP borde gå både bakåt och framåt
+    dataframe = _read_dataframe(filepath, EXOM_FORMAT)
+    dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
+    mask = dataframe['start'].sub(dataframe['end'].shift(fill_value=0)).gt(10000).cumsum()
+    dataframe['weight'] =(dataframe['end']-dataframe['start'])*dataframe['meanCoverage']
+    dataframe2 = dataframe.groupby([mask, 'chrom']).agg(start=('start', 'first'), end=('end','last'), sum=('weight','sum'))
+    dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start'] + PADDING
+    dataframe2['bar_height'] = dataframe2['sum'] / dataframe2['bar_width']
 
-    mask2=(dataframe['start'])-dataframe['end'].shift() < 5000
-    # mask_backward = dataframe['end']-dataframe['start'].shift() < IGNORE_GAP
-    # mask = mask_forward | mask_backward
-    
+
     print(dataframe)
     print(mask)
-    dataframe['cumulative_weight'] = dataframe.groupby(mask.shift(fill_value=0).cumsum())['weight'].transform('sum')
-
-    dataframe2 = dataframe.groupby(['cumulative_weight', 'chrom'], sort=False).agg(start=('start','min'), end= ('end','max')).reset_index()
-    dataframe2.reindex(['cumulative_weight','start','end'], axis='columns')
-
-    dataframe2['bar_width'] = dataframe2['end'] - dataframe2['start']
-    dataframe2['bar_height'] = dataframe2['cumulative_weight'] / dataframe2['bar_width']
-    # dataframe2.drop(dataframe2[dataframe2.bar_width <10000].index, inplace=True)
-    # dataframe2.drop(dataframe2[dataframe2.bar_height <0.1].index, inplace=True)
-    dataframe2.to_csv("DBG_df.csv", sep='\t')
 
     
-    dataframe2['bar_height'].clip(upper=25, inplace=True)
+    dataframe2.to_csv("DBG_df.csv", sep='\t')
+    dataframe2['bar_height'].clip(upper=100, inplace=True)
 
 
     print(dataframe2)
