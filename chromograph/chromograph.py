@@ -196,8 +196,6 @@ def area_graph_generator(dataframe, x_axis, y_axis):
             "label": chrom,
             "x": group[x_axis].values,
             "y": group[y_axis].values,
-
-            "bar_width": group["bar_width"].values,
         }
 
 
@@ -205,11 +203,6 @@ def area_graph_generator_combine(dataframe, height):
     # TODO: combining area graphs into one png is not implemented
     yield False
 
-
-def exom_coverage_generator(dataframe, data_state):
-    """Iterate dataframe and yeild exom coverage"""
-    for chrom, group in dataframe.groupby("chrom"):
-        yield {"label": chrom, "x": group["pos"].values, "y": group[meanCoverage].values}
 
 
 ## Library functions
@@ -248,8 +241,8 @@ def _is_chr_str(chrom):
 def _read_dataframe(filepath, format):
     """Read a bed file into a Pandas dataframe according to 'format'. Do
     some checks and return dataframe"""
-    dataframe = pandas.read_csv(filepath, names=format, sep="\t", skiprows=1)
-    print(dataframe)
+    dataframe = pandas.read_csv(filepath, dtype={'chrom':str}, names=format, sep="\t", skiprows=1)
+    # dataframe = pandas.read_csv(filepath, dtype={'chrom':str, 'start':int,  'end':int,'meanCoverage':int}, names=format, sep="\t", skiprows=1)
     if dataframe.empty:
         print("Warning: No suitable data found: {}!".format(filepath))
         sys.exit(0)
@@ -257,8 +250,7 @@ def _read_dataframe(filepath, format):
     dataframe.chrom = dataframe.chrom.astype(str)
     # delete chromosomes not in CHROMOSOME_LIST
     chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
-    dataframe = filter_dataframe(dataframe, chromosome_list)
-    return dataframe
+    return filter_dataframe(dataframe, chromosome_list)
 
 
 def _get_tint_color(disomy_type, parent):
@@ -440,30 +432,6 @@ def print_transparent_pngs(file, outd, is_printed):
         filestream.close()
 
 
-def print_area_graph(
-    dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
-):
-    """Print an area graph as PNG file. Used to print picture of coverage"""
-    if not combine:  # Plot one chromosome per png
-        is_printed = []
-        for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
-            fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-            _common_settings(axis)
-            axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            axis.set_ylim(bottom=0)
-            fig.tight_layout()
-            plt.ylim(0, ylim_height)
-            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
-            outfile = outpath(outd, filepath, chrom_data["label"])
-            print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
-            is_printed.append(chrom_data["label"])
-            plt.close(fig)  # save memory
-        if euploid:
-            print_transparent_pngs(filepath, outd, is_printed)
-    else:
-        print("WARNING: Combined area graphs are not implemented!")
-        False
 
 
 def print_bar_chart(
@@ -658,7 +626,7 @@ def plot_exom_coverage(filepath, *args, **kwargs):
     # Weights of exoms included in such a added and divided by the total width to create
     # representative value (bar height).
     dataframe = _read_dataframe(filepath, EXOM_FORMAT)
-    dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index, inplace=True)
+    df = dataframe.drop(dataframe[dataframe.meanCoverage < 10.0].index).copy()
     mask = dataframe["start"].sub(dataframe["end"].shift(fill_value=0)).gt(EXOM_GAP).cumsum()
     dataframe["weight"] = (dataframe["end"] - dataframe["start"]) * dataframe["meanCoverage"]
     dataframe2 = dataframe.groupby([mask, "chrom"]).agg(
@@ -738,35 +706,30 @@ def plot_wig_aux(filepath, ylim_height, *args, **kwargs):
     )
 
 
-def print_area_graph(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+def print_area_graph(
+    dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
+):
     """Print an area graph as PNG file. Used to print picture of coverage"""
-
-    print("= = =")
-    print(dataframe)
-    print(y_axis)
-
     if not combine:  # Plot one chromosome per png
         is_printed = []
         for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
             fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
             _common_settings(axis)
             axis.stackplot(chrom_data["x"], chrom_data["y"], colors=color)
-            plt.ylim(0, ylim_height)
             axis.set_ylim(bottom=0)
-            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             fig.tight_layout()
-            outfile = outpath(outd, file_path, chrom_data["label"])
+            plt.ylim(0, ylim_height)
+            axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+            outfile = outpath(outd, filepath, chrom_data["label"])
             print("outfile: {}".format(outfile))
             fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
-            print_transparent_pngs(file, outd, is_printed)
+            print_transparent_pngs(filepath, outd, is_printed)
     else:
-        # TODO:
         print("WARNING: Combined area graphs are not implemented!")
         False
-
 
 def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
     """Print vertical bar chart"""
@@ -777,12 +740,11 @@ def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, 
     #        ylim=(0, 8), yticks=np.arange(1, 8))
     # plt.show()
     is_printed = []
-    for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
+    for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
         _common_settings(axis)
         axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
         plt.ylim(0, ylim_height)
-        print('1.')
         axis.set_ylim(bottom=0)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         fig.tight_layout()
