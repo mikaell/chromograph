@@ -722,7 +722,7 @@ def print_area_graph(
             axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             outfile = outpath(outd, filepath, chrom_data["label"])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=100)
+            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
