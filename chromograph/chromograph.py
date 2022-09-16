@@ -48,6 +48,9 @@ HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_EXOM = "Plot exom coverage from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
+DPI_SMALL = 100
+DPI_MEDIUM = 1000
+DPI_LARGE = 5000
 PADDING = 200000
 CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
@@ -113,7 +116,7 @@ CHROMOSOMES = [
     "Y",
 ]
 
-DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False, "agg_chunk_size": 10000}
+DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False, "agg_chunk_size": 10000, "DPI": DPI_MEDIUM}
 
 get_color = {
     # Cytoband colors
@@ -282,6 +285,11 @@ def _args_to_dict(filepath, args, kwargs):
         print("output directory:{}".format(kwargs["outd"]))
         _assure_dir(kwargs["outd"])
         settings["outd"] = kwargs["outd"]
+    if "small" in args:
+        settings["dpi"] = DPI_SMALL
+    if "large" in args:
+        settings["dpi"] = DPI_LARGE
+
     return settings
 
 
@@ -875,6 +883,10 @@ def main():
         "-u", "--chunk", type=int, help="Set Matplotlib.agg.path.chunksize (default 10000)"
     )
     parser.add_argument("-x", "--combine", help=HELP_STR_COMBINE, action="store_true")
+    parser.add_argument("--small", action="store_true")
+    parser.add_argument("--medium", action="store_true")
+    parser.add_argument("--large", action="store_true")
+
 
     args = parser.parse_args()
 
@@ -882,6 +894,8 @@ def main():
     args.norm = "norm" if args.norm else None
     args.combine = "combine" if args.combine else None
     args.euploid = "euploid" if args.euploid else None
+    args.dpi = DPI_SMALL if args.small else DPI_MEDIUM
+    args.dpi = DPI_LARGE if args.large else DPI_MEDIUM
 
     agg_chunks_size = args.chunk if args.chunk else DEFAULT_SETTING["agg_chunk_size"]
     matplotlib.rcParams["agg.path.chunksize"] = agg_chunks_size
