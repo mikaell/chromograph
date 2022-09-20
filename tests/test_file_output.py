@@ -14,11 +14,11 @@ import hashlib
    Note that different files work on different chromosomes.
 """
 
-IDEOGRAM_MD5 = "84095d4ab8a64756c647e2248373a2da"
+IDEOGRAM_MD5 = "83ba68e788730ada6ce77c7e2c0ebde0"
 CHROM1_MD5 = "f5b32773a52d0975e6935072bd02e5d5"
-COVERAGE_MD5 = "a736401fe0ccba6bf616ed92a4679da1"
-UPD_REGIONS_MD5 = "01c8692e23b75af845c73d1e81afc30a"
-UPD_SITES_MD5 = "f29a92edffd43c4d2a3879f7559233ef"
+COVERAGE_MD5 = "570acd69ed69d868e2f7b9f638a2e480"
+UPD_REGIONS_MD5 = "001e43b6e85ebe6edfea59dd07139862"
+UPD_SITES_MD5 = "620c70adcf5197f07647f2ec7e69ca6c"
 
 def test_ideogram():
     chrom.plot_ideogram(cytoband_example)
