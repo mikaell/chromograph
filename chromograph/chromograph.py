@@ -84,6 +84,7 @@ EXOM_GAP = 10000
 WIG_FORMAT = ["chrom", "coverage", "pos"]
 WIG_ORANGE = "#DB6400"
 WIG_MAX = 70.0
+DARK_GOLD = "#A98200"
 
 TRANSPARENT_PNG = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x01\x03\x00\x00\x00%=m"\x00\x00\x00\x03PLTE\xff\xff\xff\xa7\xc4\x1b\xc8\x00\x00\x00\x01tRNS\x00@\xe6\xd8f\x00\x00\x00\x0cIDAT\x08\x1dc` \r\x00\x00\x000\x00\x01\x84\xac\xf1z\x00\x00\x00\x00IEND\xaeB`\x82'
 
@@ -116,7 +117,13 @@ CHROMOSOMES = [
     "Y",
 ]
 
-DEFAULT_SETTING = {"combine": False, "normalize": False, "euploid": False, "agg_chunk_size": 10000, "DPI": DPI_MEDIUM}
+DEFAULT_SETTING = {
+    "combine": False,
+    "normalize": False,
+    "euploid": False,
+    "agg_chunk_size": 10000,
+    "dpi": DPI_MEDIUM,
+}
 
 get_color = {
     # Cytoband colors
@@ -207,7 +214,6 @@ def area_graph_generator_combine(dataframe, height):
     yield False
 
 
-
 ## Library functions
 ## -----------------
 def _assure_dir(outd):
@@ -244,7 +250,7 @@ def _is_chr_str(chrom):
 def _read_dataframe(filepath, format):
     """Read a bed file into a Pandas dataframe according to 'format'. Do
     some checks and return dataframe"""
-    dataframe = pandas.read_csv(filepath, dtype={'chrom':str}, names=format, sep="\t", skiprows=1)
+    dataframe = pandas.read_csv(filepath, dtype={"chrom": str}, names=format, sep="\t", skiprows=1)
     # dataframe = pandas.read_csv(filepath, dtype={'chrom':str, 'start':int,  'end':int,'meanCoverage':int}, names=format, sep="\t", skiprows=1)
     if dataframe.empty:
         print("Warning: No suitable data found: {}!".format(filepath))
@@ -269,39 +275,53 @@ def _get_tint_color(disomy_type, parent):
     return get_color[parent]
 
 
-def _args_to_dict(filepath, args, kwargs):
+def parse_lib_call(args):
+    """Helper function to keep command line and import usage of Chromograph the same"""
+    arg_dict = {}
+    arg_dict["combine"] = "combine" in args
+    arg_dict["normalize"] = "normalize" in args
+    arg_dict["euploid"] = "euploid" in args
+    return arg_dict
+
+
+def _args_to_dict(filepath, args):
     """Handle command line arguments and settings. Return a dict of
-    args set to default if not given."""
+    args set to default if not given.
+
+
+    Arguments
+        filepath : File
+        args: Tuple
+
+    Returns: Dict
+    """
     settings = DEFAULT_SETTING
     settings["outd"] = os.path.dirname(filepath)
+    head, *_tail = list(args)
 
-    if "combine" in args:
-        settings["combine"] = True
-    if "norm" in args:
-        settings["normalize"] = True
-    if "euploid" in args:
-        settings["euploid"] = True
-    if "outd" in kwargs and kwargs["outd"] is not None:
-        print("output directory:{}".format(kwargs["outd"]))
-        _assure_dir(kwargs["outd"])
-        settings["outd"] = kwargs["outd"]
-    if "small" in args:
+    settings["combine"] = head.get("combine") == "combine"
+    settings["normalize"] = head.get("norm") == "norm"
+    settings["euploid"] = head.get("euploid") == "euploid"
+    if "outd" in head and head["outd"] is not None:
+        _assure_dir(head["outd"])
+        settings["outd"] = head["outd"]
+    if "small" in head:
         settings["dpi"] = DPI_SMALL
-    if "large" in args:
+    if "large" in head:
         settings["dpi"] = DPI_LARGE
-
+    settings["step"] = head.get("step")
     return settings
 
 
-def _wig_args_to_dict(header, filepath, args, kwargs):
+def _wig_args_to_dict(header, filepath, args):
     """Override default settings if argument is given, return settings dict for coverage/wig"""
-    settings = _args_to_dict(filepath, args, kwargs)
+    settings = _args_to_dict(filepath, args)
     settings["color"] = WIG_ORANGE  # set default color, override if rgb in kw
     settings["fixedStep"] = header["step"]
-    if "rgb" in kwargs and kwargs["rgb"] is not None:
-        settings["color"] = _rgb_str(kwargs["rgb"])
-    if "step" in kwargs and kwargs["step"] is not None:
-        settings["fixedStep"] = kwargs["step"]
+    if "rgb" in args and args.rgb is not None:
+        settings["color"] = _rgb_str(args.rgb)
+    if "step" in args and args.step is not None:
+        settings["fixedStep"] = args.step
     return settings
 
 
@@ -440,8 +460,6 @@ def print_transparent_pngs(file, outd, is_printed):
         filestream.close()
 
 
-
-
 def print_bar_chart(
     dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
 ):
@@ -523,20 +541,52 @@ def graph_coordinates(list_of_chromosomes):
     return chrom_ybase, chrom_centers
 
 
+## Lib Interface
+## -------------
+def plot_autozyg(filepath, *args, **kwargs):
+    _plot_autozyg(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_coverage_wig(filepath, *args, **kwargs):
+    _plot_coverage_wig(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_exom_coverage(filepath, *args, **kwargs):
+    _plot_exom_coverage(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_homosnp_wig(filepath, *args, **kwargs):
+    _plot_homosno_wig(filepath, parse_lib_call(args) | kwargs)
+
+
 def plot_ideogram(filepath, *args, **kwargs):
+    _plot_ideogram(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_upd_regions(filepath, *args, **kwargs):
+    _plot_upd_regions(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_upd_sites(filepath, *args, **kwargs):
+    _plot_upd_sites(filepath, parse_lib_call(args) | kwargs)
+
+
+def plot_upd_sites(filepath, *args, **kwargs):
+    _plot_upd_sites(filepath, parse_lib_call(args) | kwargs)
+
+
+##
+## ----------------------
+def _plot_ideogram(filepath, *args):
     """Visualize chromosome ideograms from bed-file. Format:
 
     Args:
-        filepath(string path)
-
-    Optional Args:
-        combine -- output all graphs in one png
-        outd=<str> -- output directory
+       args:argparse.Namespace
 
     Returns:
           None
     """
-    settings = _args_to_dict(filepath, args, kwargs)
+    settings = _args_to_dict(filepath, args)
     print(
         "Plot ideograms with settings\ncombine:{}\noutd:{}".format(
             settings["combine"], settings["outd"]
@@ -556,9 +606,9 @@ def plot_ideogram(filepath, *args, **kwargs):
         print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
 
 
-def plot_autozyg(filepath, *args, **kwargs):
+def _plot_autozyg(filepath, *args):
     """Plot ROH file for analysis of isodisomy"""
-    settings = _args_to_dict(filepath, args, kwargs)
+    settings = _args_to_dict(filepath, args)
     print(
         "Plot RoH Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
@@ -579,7 +629,7 @@ def plot_autozyg(filepath, *args, **kwargs):
         )
 
 
-def plot_upd_sites(filepath, *args, **kwargs):
+def _plot_upd_sites(filepath, *args):
     """Visualize UPD data from bed-file. Bed format as:
 
         Chromosome <tab> Start <tab> End <tab> Upd-type
@@ -597,7 +647,11 @@ def plot_upd_sites(filepath, *args, **kwargs):
     Returns: None
 
     """
-    settings = _args_to_dict(filepath, args, kwargs)
+    print("------")
+    print(args)
+    print(*args)
+    settings = _args_to_dict(filepath, args)
+
     print(
         "Plot UPD Sites with settings\ncombine:{}\neuploid:{}".format(
             settings["combine"], settings["euploid"]
@@ -609,6 +663,7 @@ def plot_upd_sites(filepath, *args, **kwargs):
     dataframe["colors"] = dataframe["updType"].apply(lambda x: get_color[x])
     chromosome_list = _get_chromosome_list(_is_chr_str(dataframe.chrom[0]))
     chrom_ybase, chrom_centers = graph_coordinates(chromosome_list)
+
     if settings["combine"]:
         print_combined_pic(
             dataframe, chrom_ybase, chrom_centers, filepath, settings["outd"], chromosome_list
@@ -617,9 +672,9 @@ def plot_upd_sites(filepath, *args, **kwargs):
         print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
 
 
-def plot_exom_coverage(filepath, *args, **kwargs):
+def _plot_exom_coverage(filepath, *args):
     """Plot exom coverage from bed file."""
-    settings = _args_to_dict(filepath, args, kwargs)
+    settings = _args_to_dict(filepath, args)
     ylim_height = 5
     x_axis = "start"
     y_axis = "bar_height"
@@ -657,27 +712,22 @@ def plot_exom_coverage(filepath, *args, **kwargs):
     )
 
 
-def plot_coverage_wig(filepath, *args, **kwargs):
+def _plot_coverage_wig(filepath, *args):
     """Plot a wig file representing coverage"""
-    color = WIG_ORANGE
     ylim_height = 75
-    if "rgb" in kwargs and kwargs["rgb"] is None:
-        kwargs["rgb"] = WIG_ORANGE
-    plot_wig_aux(filepath, ylim_height, *args, **kwargs)
+    plot_wig_aux(filepath, ylim_height, WIG_ORANGE, args)
 
 
-def plot_homosnp_wig(filepath, *args, **kwargs):
+def _plot_homosnp_wig(filepath, *args):
     """Plot a wig file where entries represent percent of homozygous SNPs"""
     ylim_height = 1
-    if "rgb" in kwargs and kwargs["rgb"] is None:
-        kwargs["rgb"] = "#A98200"  # Dark Goldenrod
-    plot_wig_aux(filepath, ylim_height, *args, **kwargs)
+    plot_wig_aux(filepath, ylim_height, DARK_GOLD, args)
 
 
-def plot_wig_aux(filepath, ylim_height, *args, **kwargs):
+def plot_wig_aux(filepath, ylim_height, default_color, args):
     """Outputs png:s of data given on WIG format."""
     header = parse_wig_declaration(filepath)
-    settings = _wig_args_to_dict(header, filepath, args, kwargs)
+    settings = _wig_args_to_dict(header, filepath, args)
 
     print(
         "Plot WIG with settings \nstep: {}\noutd:{}\ncombine:{}\nnormalize:{}\neuploid:{}".format(
@@ -739,7 +789,10 @@ def print_area_graph(
         print("WARNING: Combined area graphs are not implemented!")
         False
 
-def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height):
+
+def print_bar_chart(
+    dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height
+):
     """Print vertical bar chart"""
     # plot
     # fig, ax = plt.subplots()
@@ -751,7 +804,13 @@ def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, 
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
         _common_settings(axis)
-        axis.bar(chrom_data["x"], chrom_data["y"], width=chrom_data["bar_width"], color=color, linewidth=0)
+        axis.bar(
+            chrom_data["x"],
+            chrom_data["y"],
+            width=chrom_data["bar_width"],
+            color=color,
+            linewidth=0,
+        )
         plt.ylim(0, ylim_height)
         axis.set_ylim(bottom=0)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
@@ -765,7 +824,7 @@ def print_bar_chart(dataframe, file_path, outd, combine, x_axis, y_axis, color, 
         print_transparent_pngs(file_path, outd, is_printed)
 
 
-def plot_upd_regions(file, *args, **kwargs):
+def _plot_upd_regions(filepath, *args):
     """Print region as PNG file
     <chrom>  <start>  <stop>   <desc>
     where desc is
@@ -774,13 +833,13 @@ def plot_upd_regions(file, *args, **kwargs):
 
     # Parse sites upd file to brokenbarcollection
     read_line = []
-    settings = _args_to_dict(file, args, kwargs)
+    settings = _args_to_dict(filepath, args)
     print(
         "Plot UPD REGIONS with settings \noutd:{}\neuploid: {}".format(
             settings["outd"], settings["euploid"]
         )
     )
-    with open(file) as filepointer:
+    with open(filepath) as filepointer:
         for line in filepointer:
             if len(line.strip()) > 0:  # don't parse empty strings
                 read_line.append(parse_upd_regions(line))
@@ -798,19 +857,18 @@ def plot_upd_regions(file, *args, **kwargs):
             x_axis.add_collection(bar)
             _common_settings(x_axis)
             x_axis.set_xlim(0, CHROM_END_POS)  # try to mimic nice bounds
-            outfile = outpath(settings["outd"], file, bar.get_label())
+            outfile = outpath(settings["outd"], filepath, bar.get_label())
             is_printed.append(bar.get_label())
 
-        outfile = outpath(settings["outd"], file, bar.get_label())
+        outfile = outpath(settings["outd"], filepath, bar.get_label())
         fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
     for name in dict.fromkeys(is_printed):
-        print("outfile: {}".format(outpath(settings["outd"], file, name)))
+        print("outfile: {}".format(outpath(settings["outd"], filepath, name)))
     if settings["euploid"]:
         print_transparent_pngs(file, settings["outd"], is_printed)
-
 
 
 def main():
@@ -887,8 +945,11 @@ def main():
     parser.add_argument("--medium", action="store_true")
     parser.add_argument("--large", action="store_true")
 
-
     args = parser.parse_args()
+    print("ARGS")
+    print(args)
+    print(vars(args))
+    # print(**vars(args))
 
     # Make command line and library interfaces behave identical regarding args
     args.norm = "norm" if args.norm else None
@@ -900,36 +961,20 @@ def main():
     agg_chunks_size = args.chunk if args.chunk else DEFAULT_SETTING["agg_chunk_size"]
     matplotlib.rcParams["agg.path.chunksize"] = agg_chunks_size
 
-    if args.ideofile:
-        plot_ideogram(args.ideofile, args.combine, outd=args.outd)
-    if args.upd_sites:
-        plot_upd_sites(args.upd_sites, args.combine, args.euploid, outd=args.outd, step=args.step)
     if args.autozyg:
-        plot_autozyg(args.autozyg, args.combine, args.euploid, outd=args.outd)
-    if args.exom_coverage:
-        plot_exom_coverage(args.exom_coverage, args.combine, args.euploid, outd=args.outd)
+        _plot_autozyg(args.autozyg, vars(args))
     if args.coverage_file:
-        plot_coverage_wig(
-            args.coverage_file,
-            args.combine,
-            args.norm,
-            args.euploid,
-            outd=args.outd,
-            step=args.step,
-            rgb=args.rgb,
-        )
+        _plot_coverage_wig(args.coverage_file, vars(args))
+    if args.exom_coverage:
+        _plot_exom_coverage(args.exom_coverage, vars(args))
     if args.hozysnp_file:
-        plot_homosnp_wig(
-            args.hozysnp_file,
-            args.combine,
-            args.norm,
-            args.euploid,
-            outd=args.outd,
-            step=args.step,
-            rgb=args.rgb,
-        )
+        _plot_homosnp_wig(args.hozysnp_file, vars(args))
+    if args.ideofile:
+        plot_ideogram(args.ideofile, vars(args))
     if args.upd_regions:
-        plot_upd_regions(args.upd_regions, args.euploid, outd=args.outd)
+        _plot_upd_regions(args.upd_regions, vars(args))
+    if args.upd_sites:
+        _plot_upd_sites(args.upd_sites, vars(args))
     if len(sys.argv[1:]) == 0:
         parser.print_help()
         parser.exit()
