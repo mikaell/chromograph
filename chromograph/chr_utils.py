@@ -47,7 +47,6 @@ def parse_wig_declaration(wigfile, separator=" "):
         x, *xs = line.split(separator)
         if x.lower() == 'fixedstep' and 'chrM' not in xs[0]:
             declaration = make_dict(xs)   # split xs on '=' to get a dict
-            print(declaration)
             return cast(declaration)
         i += 1
     raise Warning('declarationNotFound')

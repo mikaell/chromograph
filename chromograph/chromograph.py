@@ -458,7 +458,6 @@ def print_bar_chart(
     is_printed = []
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
-        print(chrom_data)
         _common_settings(axis)
         # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         axis.bar(
@@ -638,9 +637,6 @@ def _plot_upd_sites(filepath, *args):
     Returns: None
 
     """
-    print("------")
-    print(args)
-    print(*args)
     settings = _args_to_dict(filepath, args)
 
     print(
@@ -934,10 +930,6 @@ def main():
     parser.add_argument("-x", "--combine", help=HELP_STR_COMBINE, action="store_true")
 
     args = parser.parse_args()
-    print("ARGS")
-    print(args)
-    print(vars(args))
-    # print(**vars(args))
 
     # Make command line and library interfaces behave identical regarding args
     args.norm = "norm" if args.norm else None
