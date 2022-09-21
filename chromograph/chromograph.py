@@ -48,7 +48,7 @@ HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_EXOM = "Plot exom coverage from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
-DPI_SMALL = 250
+DPI_SMALL = 300
 DPI_MEDIUM = 1000
 DPI_LARGE = 2500
 PADDING = 200000
@@ -426,9 +426,11 @@ def print_individual_pics(dataframe, infile, settings):
         axis.add_collection(collection)
         _common_settings(axis)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=resolution)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
@@ -494,12 +496,14 @@ def print_bar_chart(dataframe, filepath, x_axis, y_axis, color, ylim_height, set
             linewidth=0,
         )
         plt.ylim(0, ylim_height)
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         axis.set_ylim(bottom=0)
         fig.tight_layout()
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         outfile = outpath(outd, filepath, chrom_data["label"])
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=resolution)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
@@ -788,12 +792,13 @@ def print_area_graph(dataframe, filepath, x_axis, y_axis, settings, ylim_height)
             axis.set_ylim(bottom=0)
             fig.tight_layout()
             plt.ylim(0, ylim_height)
+            plt.rcParams['figure.dpi'] = resolution
+            plt.rcParams['savefig.dpi'] = resolution
             axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             outfile = outpath(outd, filepath, chrom_data["label"])
             print("outfile: {}".format(outfile))
             fig.savefig(
-                outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=resolution
-            )
+                outfile, transparent=True, bbox_inches="tight", pad_inches=0)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
@@ -821,14 +826,15 @@ def print_bar_chart(dataframe, file_path, x_axis, y_axis, color, settings, ylim_
             linewidth=0,
         )
         plt.ylim(0, ylim_height)
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         axis.set_ylim(bottom=0)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         fig.tight_layout()
         outfile = outpath(outd, file_path, chrom_data["label"])
         print("outfile: {}".format(outfile))
         fig.savefig(
-            outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=resolution
-        )
+            outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
@@ -857,7 +863,7 @@ def _plot_upd_regions(filepath, *args):
     region_list = [region_to_dict(i) for i in read_line]
     region_list_chr = compile_per_chrom(region_list)
     hbar_list = regions_to_hbar(region_list_chr)
-
+    resolution = settings["dpi"]
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, 0.5))
     x_axis = fig.add_subplot(111)
@@ -872,9 +878,10 @@ def _plot_upd_regions(filepath, *args):
             is_printed.append(bar.get_label())
 
         outfile = outpath(settings["outd"], filepath, bar.get_label())
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         fig.savefig(
-            outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=settings["dpi"]
-        )
+            outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
