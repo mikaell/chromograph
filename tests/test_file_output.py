@@ -13,6 +13,8 @@ import hashlib
 
    Note that different files work on different chromosomes.
 """
+# TODO: use tmp-dir for files written
+
 
 IDEOGRAM_MD5 = "83ba68e788730ada6ce77c7e2c0ebde0"
 CHROM1_MD5 = "f5b32773a52d0975e6935072bd02e5d5"
