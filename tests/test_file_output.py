@@ -2,6 +2,7 @@ import chromograph.chromograph as chrom
 from chromograph import (
     autozygosity_example,
     coverage_example,
+    exom_example,
     cytoband_example,
     homozygous_snp_example,
     upd_regions_example,
@@ -33,6 +34,12 @@ def test_ideogram():
 def test_coverage():
     chrom.plot_coverage_wig(coverage_example)
     with open("tests/example_files/coverage_chr1.png", "rb") as f:
+        assert f.read() # read file as bytes
+        f.close()
+
+def test_exom_coverage():
+    chrom.plot_exom_coverage(exom_example)
+    with open("tests/example_files/exom_coverage_1.png", "rb") as f:
         assert f.read() # read file as bytes
         f.close()
 
