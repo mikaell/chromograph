@@ -334,7 +334,7 @@ def _wig_args_to_dict(header, filepath, args):
 
 
 def _rgb_str(color):
-    """Return #color"""
+    """Return hex color as string"""
     head, *_tail = str(color)
     if head == "#":
         return color  # color was alread on format "#123456"
@@ -439,11 +439,12 @@ def print_individual_pics(dataframe, infile, settings):
 
 def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, settings, chr_list):
     """Print all chromosomes in a single PNG picture"""
-    resolution = settings["dpi"]
     outd = settings["outd"]
-
     fig = plt.figure(figsize=FIGSIZE)
     axis = fig.add_subplot(111)
+    plt.rcParams['figure.dpi'] = settings["dpi"]
+    plt.rcParams['savefig.dpi'] = settings["dpi"]
+
     for collection in horizontal_bar_generator_combine(dataframe, chrom_ybase):
         axis.add_collection(collection)
 
@@ -468,7 +469,6 @@ def print_transparent_pngs(file, outd, is_printed):
             continue
 
         prefix = "chr" if gene_build == "str" else ""
-
         outfile = outpath(outd, file, prefix + chrom)
         print("print transparent: {}".format(outfile))
         filestream = open(outfile, "bw")
@@ -487,7 +487,6 @@ def print_bar_chart(dataframe, filepath, x_axis, y_axis, color, ylim_height, set
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
         _common_settings(axis)
-        # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         axis.bar(
             chrom_data["x"],
             chrom_data["y"],
@@ -811,7 +810,7 @@ def print_area_graph(dataframe, filepath, x_axis, y_axis, settings, ylim_height)
 def print_bar_chart(dataframe, file_path, x_axis, y_axis, color, settings, ylim_height):
     """Print vertical bar chart"""
     combine = settings["combine"]
-    euploid = settigns["euploid"]
+    euploid = settings["euploid"]
     outd = settings["outd"]
     resolution = settings["dpi"]
     is_printed = []
@@ -983,7 +982,7 @@ def main():
     if args.hozysnp_file:
         _plot_homosnp_wig(args.hozysnp_file, vars(args))
     if args.ideofile:
-        plot_ideogram(args.ideofile, vars(args))
+        _plot_ideogram(args.ideofile, vars(args))
     if args.upd_regions:
         _plot_upd_regions(args.upd_regions, vars(args))
     if args.upd_sites:
