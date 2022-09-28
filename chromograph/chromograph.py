@@ -48,9 +48,9 @@ HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_EXOM = "Plot exom coverage from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
-DPI_SMALL = 300
-DPI_MEDIUM = 1000
-DPI_LARGE = 2500
+DPI_SMALL = 100
+DPI_MEDIUM = 300
+DPI_LARGE = 1000
 PADDING = 200000
 CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
