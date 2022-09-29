@@ -48,6 +48,9 @@ HELP_STR_UPD_SITE = "Plot UPD sites from bed file "
 HELP_STR_EXOM = "Plot exom coverage from bed file "
 HELP_STR_VSN = "Display program version ({}) and exit."
 
+DPI_SMALL = 100
+DPI_MEDIUM = 300
+DPI_LARGE = 1000
 PADDING = 200000
 CHROM_END_POS = 249255000  # longest chromosome is #1, 248,956,422 base pairs
 HEIGHT = 1
@@ -118,7 +121,9 @@ DEFAULT_SETTING = {
     "combine": False,
     "normalize": False,
     "euploid": False,
-    "agg_chunk_size": 10000}
+    "agg_chunk_size": 10000,
+    "dpi": DPI_MEDIUM,
+}
 
 get_color = {
     # Cytoband colors
@@ -290,9 +295,12 @@ def _args_to_dict(filepath, args):
 
     Returns: Dict
     """
+    print("ARGS______")
+    print(args)
     settings = DEFAULT_SETTING
     settings["outd"] = os.path.dirname(filepath)
     head, *_tail = list(args)
+    print(head.get("small"))
 
     settings["combine"] = head.get("combine") == "combine"
     settings["normalize"] = head.get("norm") == "norm"
@@ -301,6 +309,15 @@ def _args_to_dict(filepath, args):
         _assure_dir(head["outd"])
         settings["outd"] = head["outd"]
     settings["step"] = head.get("step")
+    if head.get("small"):
+        settings["dpi"] = DPI_SMALL
+    elif head.get("large"):
+        settings["dpi"] = DPI_LARGE
+    else:
+        settings["dpi"] = DPI_MEDIUM
+
+    print("SETTINGS")
+    print(settings)
     return settings
 
 
@@ -317,7 +334,7 @@ def _wig_args_to_dict(header, filepath, args):
 
 
 def _rgb_str(color):
-    """Return #color"""
+    """Return hex color as string"""
     head, *_tail = str(color)
     if head == "#":
         return color  # color was alread on format "#123456"
@@ -396,8 +413,11 @@ def compile_per_chrom(hbar_list):
 ## Functions to create PNGS
 ## ------------------------
 # rename print_broken_horizontal_bar
-def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
+def print_individual_pics(dataframe, infile, settings):
     """Print one chromosomes per image file"""
+    outd = settings["outd"]
+    euploid = settings["euploid"]
+    resolution = settings["dpi"]
     fig = plt.figure(figsize=(10, 0.5))
     axis = fig.add_subplot(111)
     plt.rcParams.update({"figure.max_open_warning": 0})
@@ -406,19 +426,25 @@ def print_individual_pics(dataframe, infile, outd, euploid, transperant=True):
         axis.add_collection(collection)
         _common_settings(axis)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         outfile = outpath(outd, infile, collection.get_label())
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         axis.cla()  # clear canvas before next iteration
         is_printed.append(collection.get_label())
     if euploid:
         print_transparent_pngs(infile, outd, is_printed)
 
 
-def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_list):
+def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, settings, chr_list):
     """Print all chromosomes in a single PNG picture"""
+    outd = settings["outd"]
     fig = plt.figure(figsize=FIGSIZE)
     axis = fig.add_subplot(111)
+    plt.rcParams['figure.dpi'] = settings["dpi"]
+    plt.rcParams['savefig.dpi'] = settings["dpi"]
+
     for collection in horizontal_bar_generator_combine(dataframe, chrom_ybase):
         axis.add_collection(collection)
 
@@ -427,7 +453,7 @@ def print_combined_pic(dataframe, chrom_ybase, chrom_centers, infile, outd, chr_
     axis.axis("tight")
     outfile = outpath(outd, infile, "combined")
     print("outfile: {}".format(outfile))
-    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+    fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=resolution)
 
 
 def print_transparent_pngs(file, outd, is_printed):
@@ -443,7 +469,6 @@ def print_transparent_pngs(file, outd, is_printed):
             continue
 
         prefix = "chr" if gene_build == "str" else ""
-
         outfile = outpath(outd, file, prefix + chrom)
         print("print transparent: {}".format(outfile))
         filestream = open(outfile, "bw")
@@ -451,15 +476,17 @@ def print_transparent_pngs(file, outd, is_printed):
         filestream.close()
 
 
-def print_bar_chart(
-    dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
-):
+def print_bar_chart(dataframe, filepath, x_axis, y_axis, color, ylim_height, settings):
     """Print vertical bar chart"""
     is_printed = []
+
+    outd = settings["outd"]
+    combine = settings["combine"]
+    euploid = settings["euploid"]
+    resolution = settings["dpi"]
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
         _common_settings(axis)
-        # Axes.bar(x, height, width=0.8, bottom=None, *, align='center', data=None, **kwargs)[source]
         axis.bar(
             chrom_data["x"],
             chrom_data["y"],
@@ -468,12 +495,14 @@ def print_bar_chart(
             linewidth=0,
         )
         plt.ylim(0, ylim_height)
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         axis.set_ylim(bottom=0)
         fig.tight_layout()
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         outfile = outpath(outd, filepath, chrom_data["label"])
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
@@ -593,7 +622,7 @@ def _plot_ideogram(filepath, *args):
             dataframe, chrom_ybase, chrom_centers, filepath, settings["outd"], chromosome_list
         )
     else:
-        print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
+        print_individual_pics(dataframe, filepath, settings)
 
 
 def _plot_autozyg(filepath, *args):
@@ -614,9 +643,7 @@ def _plot_autozyg(filepath, *args):
             dataframe, chrom_ybase, chrom_centers, filepath, settings["outd"], chromosome_list
         )
     else:
-        print_individual_pics(
-            dataframe, filepath, settings["outd"], settings["euploid"], transperant=False
-        )
+        print_individual_pics(dataframe, filepath, settings)
 
 
 def _plot_upd_sites(filepath, *args):
@@ -656,7 +683,7 @@ def _plot_upd_sites(filepath, *args):
             dataframe, chrom_ybase, chrom_centers, filepath, settings["outd"], chromosome_list
         )
     else:
-        print_individual_pics(dataframe, filepath, settings["outd"], settings["euploid"])
+        print_individual_pics(dataframe, filepath, settings)
 
 
 def _plot_exom_coverage(filepath, *args):
@@ -689,12 +716,10 @@ def _plot_exom_coverage(filepath, *args):
     print_bar_chart(
         dataframe2,
         filepath,
-        settings["outd"],
-        settings["combine"],
         x_axis,
         y_axis,
         get_color["EXOM_COV"],
-        settings["euploid"],
+        settings,
         ylim_height,
     )
 
@@ -741,20 +766,22 @@ def plot_wig_aux(filepath, ylim_height, default_color, args):
     print_area_graph(
         dataframe,
         filepath,
-        settings["outd"],
-        settings["combine"],
         x_axis,
         y_axis,
-        settings["color"],
-        settings["euploid"],
+        settings,
         ylim_height,
     )
 
 
-def print_area_graph(
-    dataframe, filepath, outd, combine, x_axis, y_axis, color, euploid, ylim_height
-):
+def print_area_graph(dataframe, filepath, x_axis, y_axis, settings, ylim_height):
     """Print an area graph as PNG file. Used to print picture of coverage"""
+
+    color = settings["color"]
+    combine = settings["combine"]
+    euploid = settings["euploid"]
+    outd = settings["outd"]
+    resolution = settings["dpi"]
+
     if not combine:  # Plot one chromosome per png
         is_printed = []
         for chrom_data in area_graph_generator(dataframe, x_axis, y_axis):
@@ -764,10 +791,13 @@ def print_area_graph(
             axis.set_ylim(bottom=0)
             fig.tight_layout()
             plt.ylim(0, ylim_height)
+            plt.rcParams['figure.dpi'] = resolution
+            plt.rcParams['savefig.dpi'] = resolution
             axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
             outfile = outpath(outd, filepath, chrom_data["label"])
             print("outfile: {}".format(outfile))
-            fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+            fig.savefig(
+                outfile, transparent=True, bbox_inches="tight", pad_inches=0)
             is_printed.append(chrom_data["label"])
             plt.close(fig)  # save memory
         if euploid:
@@ -777,16 +807,12 @@ def print_area_graph(
         False
 
 
-def print_bar_chart(
-    dataframe, file_path, outd, combine, x_axis, y_axis, color, euploid, ylim_height
-):
+def print_bar_chart(dataframe, file_path, x_axis, y_axis, color, settings, ylim_height):
     """Print vertical bar chart"""
-    # plot
-    # fig, ax = plt.subplots()
-    # ax.bar(x, y, width=1, edgecolor="white", linewidth=0.7)
-    # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
-    #        ylim=(0, 8), yticks=np.arange(1, 8))
-    # plt.show()
+    combine = settings["combine"]
+    euploid = settings["euploid"]
+    outd = settings["outd"]
+    resolution = settings["dpi"]
     is_printed = []
     for chrom_data in vertical_bar_generator(dataframe, x_axis, y_axis):
         fig, axis = plt.subplots(figsize=FIGSIZE_WIG)
@@ -799,12 +825,15 @@ def print_bar_chart(
             linewidth=0,
         )
         plt.ylim(0, ylim_height)
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
         axis.set_ylim(bottom=0)
         axis.set_xlim(0, CHROM_END_POS)  # bounds within maximum chromosome length
         fig.tight_layout()
         outfile = outpath(outd, file_path, chrom_data["label"])
         print("outfile: {}".format(outfile))
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        fig.savefig(
+            outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         is_printed.append(chrom_data["label"])
         plt.close(fig)  # save memory
     if euploid:
@@ -833,7 +862,7 @@ def _plot_upd_regions(filepath, *args):
     region_list = [region_to_dict(i) for i in read_line]
     region_list_chr = compile_per_chrom(region_list)
     hbar_list = regions_to_hbar(region_list_chr)
-
+    resolution = settings["dpi"]
     # Prepare canvas and plot
     fig = plt.figure(figsize=(10, 0.5))
     x_axis = fig.add_subplot(111)
@@ -848,7 +877,10 @@ def _plot_upd_regions(filepath, *args):
             is_printed.append(bar.get_label())
 
         outfile = outpath(settings["outd"], filepath, bar.get_label())
-        fig.savefig(outfile, transparent=True, bbox_inches="tight", pad_inches=0, dpi=1000)
+        plt.rcParams['figure.dpi'] = resolution
+        plt.rcParams['savefig.dpi'] = resolution
+        fig.savefig(
+            outfile, transparent=True, bbox_inches="tight", pad_inches=0)
         x_axis.cla()  # clear canvas before next iteration
 
     # print each name only once
@@ -928,6 +960,9 @@ def main():
         "-u", "--chunk", type=int, help="Set Matplotlib.agg.path.chunksize (default 10000)"
     )
     parser.add_argument("-x", "--combine", help=HELP_STR_COMBINE, action="store_true")
+    parser.add_argument("--small", action="store_true")
+    parser.add_argument("--medium", action="store_true")
+    parser.add_argument("--large", action="store_true")
 
     args = parser.parse_args()
 
@@ -947,7 +982,7 @@ def main():
     if args.hozysnp_file:
         _plot_homosnp_wig(args.hozysnp_file, vars(args))
     if args.ideofile:
-        plot_ideogram(args.ideofile, vars(args))
+        _plot_ideogram(args.ideofile, vars(args))
     if args.upd_regions:
         _plot_upd_regions(args.upd_regions, vars(args))
     if args.upd_sites:

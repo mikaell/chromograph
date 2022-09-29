@@ -6,6 +6,7 @@ __version__ = get_distribution('chromograph').version
 autozygosity_example = "tests/example_files/autozygosity.bed"
 coverage_example = "tests/example_files/coverage.wig"
 cytoband_example = "tests/example_files/cytoband.bed"
+exom_example = "tests/example_files/exom_coverage.bed"
 homozygous_snp_example = "tests/example_files/fractionHomozygousSNP.wig"
 upd_regions_example = "tests/example_files/upd_regions.bed"
 upd_sites_example = "tests/example_files/upd_sites.bed"
