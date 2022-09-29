@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
+## [ 1.3.0]
+### [Added]
+- Add support for flags changing DPI: `--small` (100 DPI), `--medium` (300 DPI), `--large` (1000 DPI).
+
+### [Changed]
+- Default DPI is now 300, instead of 1000.
+
 ## [ 1.2.2]
 ### [Changed]
 - Refactored internal code for interfacing command line and program usage as a lib-module.
